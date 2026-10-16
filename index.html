@@ -807,6 +807,115 @@
         font-size: 12.5px;
       }
     }
+
+    /* =====================================================
+       12. GLOW-UP (prettier look + featured picks)
+       ===================================================== */
+    .brand {
+      padding: 0 0 12px;
+      font-family: var(--font-serif);
+      font-size: clamp(38px, 9vw, 64px);
+      font-style: italic;
+      font-weight: 500;
+      line-height: 1;
+      letter-spacing: -.02em;
+      text-transform: none;
+      color: #f4efdb;
+      border-bottom: 0;
+      text-shadow: 0 2px 22px #050902cc;
+    }
+    .brand::after {
+      content: "";
+      display: block;
+      width: 64px;
+      height: 2px;
+      margin-top: 16px;
+      background: var(--grad-gold);
+    }
+    .cover p { font-family: var(--font-serif); font-size: 18px; font-style: italic; line-height: 1.65; }
+    .hero { padding-bottom: 54px; }
+    .hero::after {
+      content: ""; position: absolute; inset: auto 0 0 0; height: 60px;
+      background: linear-gradient(0deg, #f7f4e9 0%, transparent 100%); opacity: .18;
+    }
+
+    .card {
+      position: relative;
+      border-left: 3px solid #aa976c;
+      border-radius: 6px 16px 16px 6px;
+      padding: 22px 24px;
+      animation: rise .5s ease both;
+    }
+    .card .preview {
+      font-family: var(--font-serif);
+      font-size: 17px;
+      font-style: italic;
+      line-height: 1.7;
+      color: #d8d4b8;
+    }
+    .card h3 { font-size: 26px; }
+    .read { padding: 9px 16px; font-size: 11px; letter-spacing: .04em; }
+
+    .section-title.small { font-size: clamp(24px, 3.4vw, 30px); margin-top: 38px; }
+
+    /* Spotlight: the single best poem */
+    .spotlight { max-width: 760px; margin: 8px auto 6px; }
+    .spotlight .card {
+      padding: 30px 28px 26px;
+      border: 1px solid #8a7a3e;
+      border-left: 1px solid #8a7a3e;
+      border-radius: 20px;
+      background:
+        radial-gradient(120% 80% at 100% 0%, #c9b87f26 0%, transparent 55%),
+        var(--grad-card);
+      box-shadow: 0 18px 50px #0006, inset 0 0 0 1px #c9b87f1f;
+    }
+    .spotlight .card h3 { font-size: clamp(32px, 6vw, 42px); }
+    .spotlight .card .preview { -webkit-line-clamp: 9; font-size: 19px; }
+    .badge {
+      align-self: flex-start;
+      margin-bottom: 12px;
+      padding: 6px 13px;
+      border-radius: 20px;
+      background: var(--grad-gold);
+      color: var(--night-accent-ink);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .card-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 15px; }
+    .card-actions .read { margin-top: 0; }
+    .more {
+      padding: 8px 4px;
+      border: 0;
+      background: none;
+      color: var(--night-label);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      cursor: pointer;
+    }
+    .more:hover { color: #fff; text-decoration: underline; }
+    .cat-intro-line { text-align: center; color: var(--muted); font-size: 12px; margin: 0 0 20px; }
+
+    .search-wrap input { font-size: 13px; padding: 12px 18px 12px 42px; }
+    .feature-note { border: 1px solid #cfd2ae; box-shadow: 0 10px 30px #2f3a1714; }
+    .about-panel { box-shadow: 0 12px 34px #0003; }
+
+    /* Poem reader: more breathing room, bigger serif text */
+    .modal-body { font-family: var(--font-serif); font-size: 18px; line-height: 1.9; padding: 26px 28px 30px; }
+    .modal-body .stanza { margin-bottom: 1.4em; }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .card { animation: none; } html { scroll-behavior: auto; } }
+    @media (max-width: 480px) {
+      .cover p { font-size: 16px; }
+      .card { padding: 18px 18px; }
+      .card .preview { font-size: 16px; }
+      .spotlight .card { padding: 24px 20px 22px; }
+      .modal-body { font-size: 17px; padding: 20px 18px 24px; }
+    }
   </style>
 </head>
 
@@ -869,8 +978,12 @@
 
     <!-- ===== Home view ===== -->
     <section class="view active" id="view-home">
-      <h2 class="section-title">Featured Poems</h2>
-      <p class="sub">A few pages to begin with</p>
+      <h2 class="section-title">The Best of the Forest</h2>
+      <p class="sub">If you only read one poem today, let it be this one</p>
+      <div class="spotlight" id="spotlight"></div>
+
+      <h2 class="section-title small">One Poem from Every Category</h2>
+      <p class="sub">My favorite page from each corner of the forest</p>
       <div class="feature-grid" id="featured"></div>
 
       <div class="feature-note">
@@ -3529,14 +3642,43 @@
        START UP: fill the featured poems on the home page
        (poems matching FEATURED_TITLES come first, then by number)
        ===================================================== */
-    const featuredPoems = [...poems]
-      .sort((a, b) => {
-        const rank = (poem) => (FEATURED_TITLES.test(poem.title) ? 0 : 1);
-        return rank(a) - rank(b) || a.number - b.number;
-      })
-      .slice(0, 6);
+    /* One favorite poem per category (poem numbers), and the overall best one */
+    const FEATURED_BY_CATEGORY = { love: 5, self: 370, healing: 367, family: 196, faith: 368, life: 149, other: 141 };
+    const BEST_POEM = 5;
 
-    featuredPoems.forEach((poem) => featured.append(makeCard(poem)));
+    function makeFeatureCard(poem, categoryKey, isBest) {
+      const card = makeCard(poem);
+      const category = categories.find((c) => c.key === categoryKey);
+
+      if (isBest) {
+        const badge = document.createElement('div');
+        badge.className = 'badge';
+        badge.textContent = '★ Pick of the Forest';
+        card.prepend(badge);
+      }
+
+      const readButton = card.querySelector('.read');
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'more';
+      more.textContent = 'More in ' + category.name + ' →';
+      more.onclick = () => renderCategory(category);
+      readButton.replaceWith(actions);
+      actions.append(readButton, more);
+      return card;
+    }
+
+    const poemByNumber = (n) => poems.find((poem) => poem.number === n);
+    const bestKey = Object.keys(FEATURED_BY_CATEGORY).find((k) => FEATURED_BY_CATEGORY[k] === BEST_POEM);
+
+    byId('spotlight').append(makeFeatureCard(poemByNumber(BEST_POEM), bestKey, true));
+
+    categories.forEach((category) => {
+      const poem = poemByNumber(FEATURED_BY_CATEGORY[category.key]);
+      if (poem) featured.append(makeFeatureCard(poem, category.key, false));
+    });
   </script>
 </body>
 
