@@ -916,6 +916,9 @@
       .spotlight .card { padding: 24px 20px 22px; }
       .modal-body { font-size: 17px; padding: 20px 18px 24px; }
     }
+  .card .num{font-size:9px;letter-spacing:.14em;color:#d9c98f;margin-bottom:6px}
+.card .preview{margin-top:.4em}
+.modal-head h2{letter-spacing:.2em;font-style:normal}
   </style>
 </head>
 
@@ -956,13 +959,13 @@
     <!-- data-view must match a category key in the JS (or "home") -->
     <ul class="menu-list">
       <li><button class="menu-link active" type="button" data-view="home">Home</button></li>
-      <li><button class="menu-link" type="button" data-view="love">Love &amp; Heartbreak</button></li>
-      <li><button class="menu-link" type="button" data-view="self">About Myself</button></li>
-      <li><button class="menu-link" type="button" data-view="healing">Healing &amp; Growth</button></li>
-      <li><button class="menu-link" type="button" data-view="family">Family &amp; Friends</button></li>
-      <li><button class="menu-link" type="button" data-view="faith">Faith &amp; Hope</button></li>
-      <li><button class="menu-link" type="button" data-view="life">Life &amp; Dreams</button></li>
-      <li><button class="menu-link" type="button" data-view="other">Other Feelings</button></li>
+      <li><button class="menu-link" type="button" data-view="love">Heart</button></li>
+      <li><button class="menu-link" type="button" data-view="self">Mirror</button></li>
+      <li><button class="menu-link" type="button" data-view="healing">Dawn</button></li>
+      <li><button class="menu-link" type="button" data-view="family">Belonging</button></li>
+      <li><button class="menu-link" type="button" data-view="faith">Grace</button></li>
+      <li><button class="menu-link" type="button" data-view="life">Dreams</button></li>
+      <li><button class="menu-link" type="button" data-view="other">Whispers</button></li>
     </ul>
   </aside>
 
@@ -970,7 +973,7 @@
   <div class="global-search">
     <div class="search-wrap">
       <span>⌕</span>
-      <input id="search" type="search" placeholder="Search 001, a title, or words from a poem…">
+      <input id="search" type="search" placeholder="Search 001 or words from a poem…">
     </div>
   </div>
 
@@ -1024,7 +1027,7 @@
 
     <!-- ===== Category view (filled in by renderCategory) ===== -->
     <section class="view" id="view-category">
-      <h2 class="section-title" id="categoryTitle">Love &amp; Heartbreak</h2>
+      <h2 class="section-title" id="categoryTitle">Heart</h2>
       <p class="category-intro" id="categoryDesc">Poems for the heart, its wishes, and its goodbyes.</p>
       <div class="count" id="count"></div>
       <div class="grid" id="grid"></div>
@@ -3375,51 +3378,69 @@
         title: "Will I Still Be Enough?",
         author: "Shaina",
         text: "Sa dulo ng lahat, matatanggap ko pa ba ang sarili, Kung wala akong marating sa mga pangarap na pinili? Kung ang mundong minsang pinangarap kong masilayan, Ay mananatiling guhit lang sa papel ng aking isipan?\n\nPaano kung tumanda akong baon ang panghihinayang, Habang isa-isang inililibing ang pangarap na namatay sa kawalan? Kung ang tanging naiwan sa mga taong aking naging saksi, Ay ang mga bersiyon kong sumubok, ngunit hindi nakarating sa minimithi?\n\nSana, sa huling pahina, hindi niya ako itakwil, Ang sarili kong matagal nang takot na baka hindi maging sapat sa huli; Sana, kahit wala akong tropeong maipagmalaki sa mundo, Mayakap ko pa rin ang sarili at masabing, “Nagpakatotoo ako.”"
+      },
+      {
+        number: 382,
+        title: "Himig sa Bukang-Liwayway",
+        author: "Shaina",
+        text: "Araw-araw, madaling-araw pa lamang ay gising na,\nInaayos ang paninda habang ang mundo’y payapa pa;\nSa tabi ng kalan na de-kahoy, apoy ay nagliliyab,\nHabang ang hamog sa umaga’y unti-unting kumukupas.\nNgunit pagsapit ng Linggo, alas-kuwatro o alas-singko,\nMay himig mula sa simbahan na umaabot sa aming kinaroroonan;\nSa gitna ng usok at init na sa hangin ay sumasabay,\nTinig ng Panginoon ang marahang umaabot sa aming buhay.\nAt sa payak na umagang puno ng pawis at paghahanda,\nMay panalanging sumasabay sa bawat kilos ng mga kamay niya;\nDahil kahit sa kalan, sa paninda, at sa munting kabuhayan,\nMay himig ng pananampalatayang nagbibigay-lakas sa pakikibaka araw-araw."
+      },
+      {
+        number: 383,
+        title: "Hindi Pa Buo",
+        author: "Shaina",
+        text: "Kaya ba kitang mahalin habang ako’y nagkakagulo,\nHabang pilit kong binubuo ang sarili kong watak-watak na mundo?\nPaano kita yayakapin kung ako mismo’y nanginginig,\nKung sa bawat pagtatangkang maging buo, may bahagi pa ring nananakit?\nAyokong hintayin mong gumaling ako bago ka maniwala,\nNa kaya kitang mahalin kahit may sugat pang hindi nagsasara;\nNgunit natatakot akong sa bawat sakit na hindi ko malampasan,\nIkaw ang mapagod, at ako ang maging dahilan ng iyong paglisan.\nDahil gusto kitang mahalin nang hindi ka kailangang maghintay,\nNgunit paano kung ang kaya ko lang ngayon ay subukang manatili sa bawat araw?\nHindi ko hinihiling na saluhin mo ang lahat ng bigat ko,\nGusto ko lang sanang maniwala kang may pagmamahal pa rin sa pusong hindi pa buo."
+      },
+      {
+        number: 384,
+        title: "Akala Ko Kaibigan Lang",
+        author: "Shaina",
+        text: "Akala ko’y sapat nang kaibigan lang kita,\nNa ang bawat tawanan ay lilipas ding gaya ng umaga;\nNgunit sa tuwing magkatabi, may kakaibang nadarama,\nParang may bulaklak sa dibdib na sa ’yo lamang namumukadkad.\nHindi ko mawari kung bakit ganito ang tibok,\nBakit sa simpleng ngiti mo, ang mundo ko’y natutunaw;\nSinubukan kong itago sa likod ng mga biro,\nNgunit puso ko’y umaamin sa bawat sandaling kasama mo.\nPaano kung mahulog ako at hindi mo saluhin?\nPaano kung ang pangarap ko’y sa hangin lang maglaho rin?\nNgunit kung may pagkakataong piliin mo rin ako,\nHanda akong sumugal, basta’t sa tabi mo ako."
       }
     ];
 
     /* Categories. A poem goes into the FIRST category whose `pattern` matches
-       its title or text. "Other Feelings" is the fallback, so keep it last. */
+       its title or text. "Other" is the fallback, so keep it last. */
     const categories = [
       {
         key: 'love',
-        name: 'Love & Heartbreak',
+        name: 'Heart',
         desc: 'For love, longing, almosts, and goodbyes.',
         pattern: /love|heartbreak|lover|kiss|crush|miss you|goodbye|good-bye|relationship|romance|darling|belong to you|fall for|mahal|pag-ibig|pag ibig|pagmamahal|puso|sinta|iniibig|minahal|nagmahal|paglayo|paalam/i
       },
       {
         key: 'self',
-        name: 'About Myself',
+        name: 'Mirror',
         desc: 'Pages about identity, self-worth, and learning who I am.',
         pattern: /myself|self-love|self love|my worth|who i am|my identity|own heart|choose myself|self-respect|self respect|my dreams|my fear|my mind|sarili|pagkatao|kakayahan|aking sarili/i
       },
       {
         key: 'healing',
-        name: 'Healing & Growth',
+        name: 'Dawn',
         desc: 'For letting go, finding peace, and becoming a little stronger.',
         pattern: /healing|heal|grow|growth|letting go|let go|moving on|forgive|forgiveness|peace|stronger|survive|recovery|paghilom|pagbangon|pagsubok|pag-asa|pagasa/i
       },
       {
         key: 'family',
-        name: 'Family & Friends',
+        name: 'Belonging',
         desc: 'For the people who stay, guide us, and make a home.',
         pattern: /family|mother|father|parents|sister|brother|friend|friendship|best friend|pamilya|ina|ama|magulang|kaibigan|kapatid/i
       },
       {
         key: 'faith',
-        name: 'Faith & Hope',
+        name: 'Grace',
         desc: 'For prayers, trust, light, and the hope that carries us.',
         pattern: /god|jesus|faith|prayer|heaven|lord|church|bless|diyos|panginoon|panalangin|pananalig|biyaya/i
       },
       {
         key: 'life',
-        name: 'Life & Dreams',
+        name: 'Dreams',
         desc: 'For growing, finding a path, and dreaming of what comes next.',
         pattern: /life|dream|future|journey|path|purpose|hope|tomorrow|begin again|destination|buhay|pangarap|paglalakbay|kinabukasan|panahon/i
       },
       {
         key: 'other',
-        name: 'Other Feelings',
+        name: 'Whispers',
         desc: 'For the feelings that do not fit neatly into one name.',
         pattern: /.*/
       }
@@ -3453,10 +3474,14 @@
        ===================================================== */
 
     /* Returns the category name of a poem (first match wins) */
+    /* Hand-picked category for every poem (poem number -> category key) */
+    const CATEGORY_BY_NUMBER = {};
+    const CATEGORY_LISTS = {"love": "383,384,1,2,4,5,6,7,8,9,10,16,18,19,20,21,22,23,24,25,27,28,29,30,32,34,35,39,40,42,45,46,47,48,49,50,69,72,77,79,84,85,86,87,88,89,90,94,95,96,97,101,102,103,107,140,147,150,153,156,158,162,166,174,176,189,190,194,195,201,205,206,216,235,237,238,242,243,244,245,246,249,253,261,262,264,266,273,284,285,286,289,292,293,294,297,298,299,300,301,302,304,306,307,308,309,312,313,314,317,319,320,323,325,327,328,329,334,341,342,344,345,346,347,349,350,353,355,359,361,362,365,369,373,376,377,380", "self": "3,11,12,13,51,55,56,57,58,59,61,66,67,68,70,71,75,78,92,104,108,112,113,115,116,117,118,119,120,121,127,142,148,151,152,157,160,164,165,167,168,169,170,177,179,181,183,188,191,192,193,196,198,200,202,203,204,208,209,211,212,217,218,223,227,228,231,234,239,240,241,247,248,250,254,255,256,257,259,260,265,267,268,269,271,295,296,305,310,311,315,321,322,326,330,335,336,337,338,339,340,367,378", "healing": "31,37,38,76,80,81,83,91,93,106,122,128,129,130,132,136,145,146,159,161,173,178,185,186,199,221,222,224,225,226,270,272,276,279,281,283,287,303,318,332,348,351,352,354,358,360,366", "family": "26,36,73,82,105,123,135,137,141,144,149,154,163,171,172,187,230,233,251,252,258,275,277,331,364,379", "faith": "382,33,44,109,114,131,143,175,290", "life": "41,52,53,54,60,64,65,74,98,99,100,110,125,126,133,139,155,182,184,197,207,210,280,282,288,291,316,333,343,363,368,370,371,381", "other": "14,15,17,43,62,63,111,124,134,138,180,213,214,215,219,220,229,232,236,263,274,278,324,356,357,372,374,375"};
+    Object.entries(CATEGORY_LISTS).forEach(([key, nums]) => nums.split(',').forEach((n) => { CATEGORY_BY_NUMBER[n] = key; }));
+
     function categoryOf(poem) {
-      const haystack = (poem.title + ' ' + poem.text).toLowerCase();
-      const match = categories.find((c) => c.key !== 'other' && c.pattern.test(haystack));
-      return match ? match.name : 'Other Feelings';
+      const key = CATEGORY_BY_NUMBER[poem.number] || 'other';
+      return categories.find((c) => c.key === key).name;
     }
 
     /* Splits poem text into stanzas: a blank line or every 4 lines starts a new one */
@@ -3491,7 +3516,7 @@
 
     /* Opens the reader dialog for one poem */
     function openPoem(poem) {
-      byId('modalTitle').textContent = padNumber(poem.number) + ' · ' + poem.title;
+      byId('modalTitle').textContent = padNumber(poem.number);
       byId('modalText').replaceChildren(...buildStanzas(poem.text));
       modal.showModal();
     }
@@ -3518,7 +3543,7 @@
       readButton.textContent = 'Read poem ↗';
       readButton.onclick = () => openPoem(poem);
 
-      card.append(label, title, preview, readButton);
+      card.append(label, preview, readButton);
       return card;
     }
 
@@ -3532,7 +3557,6 @@
         return (
           paddedNumber === digits ||
           String(poem.number) === digits ||
-          poem.title.toLowerCase().includes(query) ||
           poem.text.toLowerCase().includes(query) ||
           (isNumeric && paddedNumber.includes(digits))
         );
@@ -3661,7 +3685,7 @@
        (poems matching FEATURED_TITLES come first, then by number)
        ===================================================== */
     /* One favorite poem per category (poem numbers), and the overall best one */
-    const FEATURED_BY_CATEGORY = { love: 5, self: 370, healing: 367, family: 196, faith: 368, life: 149, other: 141 };
+    const FEATURED_BY_CATEGORY = { love: 5, self: 3, healing: 222, family: 230, faith: 114, life: 99, other: 213 };
     const BEST_POEM = 5;
 
     function makeFeatureCard(poem, categoryKey, isBest) {
@@ -3701,3 +3725,4 @@
 </body>
 
 </html>
+
