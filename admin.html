@@ -43,6 +43,12 @@ button.s:hover{background:#6b3a3355;transform:none}
 #msg,#impmsg{min-height:1.4em;font-size:13px;color:var(--gold)}
 #hint{display:block;margin:2px 4px 6px}
 @media (prefers-reduced-motion:reduce){button{transition:none}}
+.tabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 16px;padding-bottom:4px}
+.tabs button{width:auto;white-space:nowrap;margin:0;padding:9px 16px;background:var(--grad-card);color:var(--night-text);border:1px solid var(--night-border);box-shadow:none;font-weight:600}
+.tabs button.on{background:var(--grad-gold);color:var(--gold-ink);border-color:transparent}
+.acts{display:flex;gap:6px;flex-shrink:0}
+button.ghost{background:transparent;color:var(--night-soft);border:1px solid var(--night-border);box-shadow:none}
+[hidden]{display:none!important}
 </style></head><body>
 <header><span class="eyebrow">Admin</span><h1 class="brand">Forest of Words</h1><p>Add a new poem to the collection</p></header>
 <div id="login" class="box">
@@ -51,6 +57,8 @@ button.s:hover{background:#6b3a3355;transform:none}
   <button id="loginBtn">Log in</button>
 </div>
 <div id="app" hidden>
+  <nav class="tabs" id="tabs"></nav>
+  <section data-tab="stats">
   <div class="box"><b>Visitors</b>
     <div id="vstats" style="display:flex;gap:10px;text-align:center;margin:8px 0">
       <div style="flex:1"><div id="vTotal" style="font:italic 600 30px var(--serif)">0</div><small>Total visits</small></div>
@@ -59,21 +67,40 @@ button.s:hover{background:#6b3a3355;transform:none}
     </div>
     <small>One visit = one device per day.</small>
   </div>
+  <div class="box"><b>Overall</b>
+    <div style="display:flex;gap:10px;text-align:center;margin:8px 0">
+      <div style="flex:1"><div id="oHearts" style="font:italic 600 30px var(--serif)">0</div><small>Total hearts</small></div>
+      <div style="flex:1"><div id="oComments" style="font:italic 600 30px var(--serif)">0</div><small>Comments</small></div>
+      <div style="flex:1"><div id="oPoems" style="font:italic 600 30px var(--serif)">0</div><small>Poems</small></div>
+    </div></div>
   <div class="box"><b>Most read</b><div id="topViews"></div></div>
   <div class="box"><b>Most hearted</b><div id="topLikes"></div></div>
+  </section>
+  <section data-tab="comments" hidden>
   <div class="box"><b>Comments</b><div id="cmAdmin"></div></div>
+  </section>
+  <section data-tab="write" hidden>
   <div class="box">
+    <b id="formTitle">New poem</b>
     <input id="title" placeholder="Title">
     <input id="author" value="Shaina" placeholder="Author">
     <textarea id="text" placeholder="Paste the whole poem here (Enter = new line, blank line = new stanza)"></textarea>
     <select id="cat"></select>
+    <small>Picture (optional)</small><input id="img" type="file" accept="image/*"><div id="imgCur"></div>
+    <small>Music (optional, mp3 up to 20 MB)</small><input id="mus" type="file" accept="audio/*"><div id="musCur"></div>
     <small id="hint"></small>
     <button id="save">Save poem</button>
+    <button id="cancelEdit" class="ghost" hidden>Cancel edit</button>
     <div id="msg"></div>
   </div>
-  <div class="box"><b>Poems added from admin</b><div id="list"></div></div>
+  </section>
+  <section data-tab="poems" hidden>
+  <div class="box"><b>All poems</b><input id="q" placeholder="Search by number or title"><div id="list"></div><button id="more" class="ghost" hidden>Show more</button></div>
+  </section>
+  <section data-tab="import" hidden>
   <div class="box"><b>One-time import</b><br><small>Choose poems.json to upload all existing poems to the database.</small>
   <input id="file" type="file" accept=".json"><button id="imp">Import poems.json</button><div id="impmsg"></div></div>
+  </section>
   <button id="logout" style="background:#666">Log out</button>
 </div>
 <script>
@@ -105,8 +132,9 @@ $('title').oninput=$('text').oninput=suggest;
 async function stats(){
   const g=async p=>{try{const r=await fetch(SUPABASE_URL+'/rest/v1/'+p,{headers:H()});return r.ok?await r.json():[]}catch(e){return[]}};
   const [v,pv,cm,po]=await Promise.all([g('visits?select=day&limit=100000'),g('poem_views?select=poem_number&limit=100000'),
-    g('poem_comments?select=id,poem_number,name,body,created_at&order=created_at.desc&limit=100'),g('poems_db?select=number,title&limit=2000')]);
+    g('poem_comments?select=id,poem_number,name,body,created_at&order=created_at.desc&limit=1000'),g('poems_db?select=number,title&limit=2000')]);
   let lk=[];try{const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/like_counts',{method:'POST',headers:H(),body:'{}'});if(r.ok)lk=await r.json()}catch(e){}
+  $('oHearts').textContent=lk.reduce((a,x)=>a+Number(x.n),0);$('oComments').textContent=cm.length;$('oPoems').textContent=po.length;
   const title={};po.forEach(p=>title[p.number]=p.title);
   const nm=n=>String(n).padStart(3,'0')+' · '+(title[n]||'');
   const today=new Date().toISOString().slice(0,10),wk=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
@@ -131,24 +159,76 @@ $('loginBtn').onclick=async()=>{
   token=j.access_token;sessionStorage.setItem('tok',token);show();
 };
 $('logout').onclick=()=>{sessionStorage.removeItem('tok');token=null;show()};
+let editing=null,ALL=[],shown=50;
+const pad=n=>String(n).padStart(3,'0');
+const TABS=[['stats','Stats'],['write','Write'],['poems','Poems'],['comments','Comments'],['import','Import']];
+TABS.forEach(([k,n])=>{const b=document.createElement('button');b.textContent=n;b.dataset.t=k;b.onclick=()=>tab(k);$('tabs').append(b)});
+function tab(n){document.querySelectorAll('section[data-tab]').forEach(x=>x.hidden=x.dataset.tab!==n);
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===n));scrollTo(0,0)}
+tab('stats');
+let curImg=null,curMus=null;
+function showMedia(){
+  [['imgCur',curImg,'picture',()=>{curImg=null;$('img').value='';showMedia()}],['musCur',curMus,'music',()=>{curMus=null;$('mus').value='';showMedia()}]].forEach(([id,u,n,rm])=>{
+    const el=$(id);el.replaceChildren();if(!u)return;
+    const a=document.createElement('small');a.textContent='Current '+n+' attached ';
+    const b=document.createElement('button');b.className='s';b.type='button';b.textContent='Remove';b.onclick=rm;
+    el.append(a,b)})}
+async function shrink(f){
+  try{const bm=await createImageBitmap(f);const k=Math.min(1,1200/Math.max(bm.width,bm.height));
+    const c=document.createElement('canvas');c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);
+    c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(r,'image/jpeg',.85))}catch(e){return f}}
+async function upload(file,isImg){
+  const blob=isImg?await shrink(file):file;
+  const ext=isImg?'jpg':(file.name.split('.').pop()||'mp3').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const name=Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
+  const r=await fetch(SUPABASE_URL+'/storage/v1/object/poem-media/'+name,{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,Authorization:'Bearer '+token,'Content-Type':blob.type||file.type,'x-upsert':'true'},body:blob});
+  if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.message||'Upload failed')}
+  return SUPABASE_URL+'/storage/v1/object/public/poem-media/'+name}
+function resetForm(){editing=null;curImg=curMus=null;$('img').value=$('mus').value='';showMedia();$('title').value=$('text').value='';$('author').value='Shaina';touched=false;suggest();
+  $('formTitle').textContent='New poem';$('save').textContent='Save poem';$('cancelEdit').hidden=true;$('msg').textContent=''}
+$('cancelEdit').onclick=()=>{resetForm();tab('poems')};
 $('save').onclick=async()=>{
   const title=$('title').value.trim(),text=$('text').value.trim();
   if(!title||!text){say('Title and poem are required.',1);return}
-  const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db',{method:'POST',headers:{...H(),Prefer:'return=representation'},body:JSON.stringify({title,text,author:$('author').value.trim()||'Shaina',category:$('cat').value})});
+  say('Saving...');
+  try{if($('img').files[0])curImg=await upload($('img').files[0],true);if($('mus').files[0])curMus=await upload($('mus').files[0],false)}
+  catch(e){say('Upload failed: '+e.message,1);return}
+  const body=JSON.stringify({title,text,author:$('author').value.trim()||'Shaina',category:$('cat').value,image_url:curImg,music_url:curMus});
+  if(editing!==null){
+    const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db?number=eq.'+editing,{method:'PATCH',headers:{...H(),Prefer:'return=minimal'},body});
+    if(!r.ok){say((await r.json()).message||'Update failed (session expired? log in again)',1);return}
+    const n=editing;resetForm();await load();tab('poems');alert('Poem #'+pad(n)+' updated');return;
+  }
+  const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db',{method:'POST',headers:{...H(),Prefer:'return=representation'},body});
   const j=await r.json();
   if(!r.ok){say(j.message||'Save failed (session expired? log in again)',1);return}
-  say('Saved as poem #'+String(j[0].number).padStart(3,'0')+' ✓');
-  $('title').value=$('text').value='';touched=false;suggest();load();
+  say('Saved as poem #'+pad(j[0].number)+' ✓');
+  resetForm();say('Saved as poem #'+pad(j[0].number)+' ✓');load();
 };
+function startEdit(p){
+  editing=p.number;$('title').value=p.title;$('text').value=p.text;$('author').value=p.author||'Shaina';
+  touched=true;$('cat').value=p.category||'other';$('hint').textContent='';curImg=p.image_url||null;curMus=p.music_url||null;$('img').value=$('mus').value='';showMedia();
+  $('formTitle').textContent='Edit poem #'+pad(p.number);$('save').textContent='Update poem';$('cancelEdit').hidden=false;$('msg').textContent='';tab('write')}
+function render(){
+  const q=$('q').value.trim().toLowerCase().replace(/^#/,'');
+  const rows=ALL.filter(p=>!q||p.title.toLowerCase().includes(q)||String(p.number)===q.replace(/^0+/,'')||pad(p.number).includes(q));
+  $('list').replaceChildren();
+  rows.slice(0,shown).forEach(p=>{const d=document.createElement('div');d.className='row';
+    const s=document.createElement('span');s.textContent=pad(p.number)+' · '+p.title;
+    const e=document.createElement('button');e.className='s';e.textContent='Edit';e.onclick=()=>startEdit(p);
+    const x=document.createElement('button');x.className='s';x.textContent='Delete';
+    x.onclick=async()=>{if(!confirm('Delete "'+p.title+'"?'))return;await fetch(SUPABASE_URL+'/rest/v1/poems_db?number=eq.'+p.number,{method:'DELETE',headers:H()});load()};
+    const a=document.createElement('div');a.className='acts';a.append(e,x);d.append(s,a);$('list').append(d)});
+  if(!rows.length)$('list').textContent='No poems found.';
+  $('more').hidden=rows.length<=shown;
+}
+$('q').oninput=()=>{shown=50;render()};
+$('more').onclick=()=>{shown+=50;render()};
 async function load(){
-  const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db?select=number,title&order=number.desc',{headers:H()});
+  const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db?select=number,title,author,text,category,image_url,music_url&order=number.desc&limit=2000',{headers:H()});
   if(r.status===401){sessionStorage.removeItem('tok');token=null;show();return}
-  const rows=await r.json();$('list').replaceChildren();
-  rows.forEach(p=>{const d=document.createElement('div');d.className='row';
-    const s=document.createElement('span');s.textContent=String(p.number).padStart(3,'0')+' · '+p.title;
-    const b=document.createElement('button');b.className='s';b.textContent='Delete';
-    b.onclick=async()=>{if(!confirm('Delete "'+p.title+'"?'))return;await fetch(SUPABASE_URL+'/rest/v1/poems_db?number=eq.'+p.number,{method:'DELETE',headers:H()});load()};
-    d.append(s,b);$('list').append(d)});
+  ALL=await r.json();render();
 }
 $('imp').onclick=async()=>{
   const f=$('file').files[0];if(!f){alert('Choose poems.json first');return}
