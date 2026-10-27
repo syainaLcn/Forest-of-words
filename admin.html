@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Forest of Words</title>
+<style>
+:root{--bg:#f6f3ec;--fg:#1f2a24;--card:#fff;--ac:#2f5d46;--bd:#d9d4c7}
+@media(prefers-color-scheme:dark){:root{--bg:#141a16;--fg:#e8efe9;--card:#1d2620;--ac:#7fbf9b;--bd:#33423a}}
+*{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,sans-serif;max-width:640px;margin-inline:auto}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
+input,textarea,select,button{width:100%;font:inherit;padding:10px;margin:6px 0;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+textarea{min-height:260px}button{background:var(--ac);color:#fff;border:0;font-weight:600}button.s{width:auto;padding:4px 10px;background:#a33}
+.row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--bd)}
+#msg{min-height:1.4em}h1{font-size:1.3rem}
+</style></head><body>
+<h1>Admin · Add poem</h1>
+<div id="login" class="box">
+  <input id="email" type="email" placeholder="Email" autocomplete="username">
+  <input id="pass" type="password" placeholder="Password" autocomplete="current-password">
+  <button id="loginBtn">Log in</button>
+</div>
+<div id="app" hidden>
+  <div class="box">
+    <input id="title" placeholder="Title">
+    <input id="author" value="Shaina" placeholder="Author">
+    <textarea id="text" placeholder="Paste the whole poem here (Enter = new line, blank line = new stanza)"></textarea>
+    <select id="cat"></select>
+    <small id="hint"></small>
+    <button id="save">Save poem</button>
+    <div id="msg"></div>
+  </div>
+  <div class="box"><b>Poems added from admin</b><div id="list"></div></div>
+  <div class="box"><b>One-time import</b><br><small>Choose poems.json to upload all existing poems to the database.</small>
+  <input id="file" type="file" accept=".json"><button id="imp">Import poems.json</button><div id="impmsg"></div></div>
+  <button id="logout" style="background:#666">Log out</button>
+</div>
+<script>
+const SUPABASE_URL='PASTE_SUPABASE_URL', SUPABASE_ANON_KEY='PASTE_SUPABASE_ANON_KEY';
+const CATS=[
+  ['love','Heart',/love|heartbreak|lover|kiss|crush|miss you|goodbye|good-bye|relationship|romance|darling|belong to you|fall for|mahal|pag-ibig|pag ibig|pagmamahal|puso|sinta|iniibig|minahal|nagmahal|paglayo|paalam/i],
+  ['self','Mirror',/myself|self-love|self love|my worth|who i am|my identity|own heart|choose myself|self-respect|self respect|my dreams|my fear|my mind|sarili|pagkatao|kakayahan|aking sarili/i],
+  ['healing','Dawn',/healing|heal|grow|growth|letting go|let go|moving on|forgive|forgiveness|peace|stronger|survive|recovery|paghilom|pagbangon|pagsubok|pag-asa|pagasa/i],
+  ['family','Belonging',/family|mother|father|parents|sister|brother|friend|friendship|best friend|pamilya|ina|ama|magulang|kaibigan|kapatid/i],
+  ['faith','Grace',/god|jesus|faith|prayer|heaven|lord|church|bless|diyos|panginoon|panalangin|pananalig|biyaya/i],
+  ['life','Dreams',/life|dream|future|journey|path|purpose|hope|tomorrow|begin again|destination|buhay|pangarap|paglalakbay|kinabukasan|panahon/i],
+  ['other','Whispers',/.*/
+      }
+    ];
+
+    /* =====================================================
+       HELPERS + DOM REFERENCES
+       ===================================================== */
+    const byId = (id) => document.getElementById(id);
+
+    const searchInput = byId('search');
+    const grid = byId('grid');
+    const featured = byId('featured');
+    const modal = byId('modal');
+
+    const menu = byId('categoryMenu');
+    const menuOverlay = byId('menuOverlay');
+    const menuToggle = byId('menuToggle');
+    const menuClose = byId('menuClose');
+    const menuLinks = document.querySelectorAll('.menu-link');
+    const currentLabel = byId('currentLabel');
+
+    /* 1 -> "001" */
+    const padNumber = (number) => String(number).padStart(3, '0');
+
+    /* Names of the poems shown first on the home page */
+    const FEATURED_TITLES = /people who stay|my first inspiration|gentle surrender|behind the noise|peace in his guidance|malayang damdamin/i]
+];
+const $=id=>document.getElementById(id);
+let token=sessionStorage.getItem('tok');
+const H=()=>({apikey:SUPABASE_ANON_KEY,...(token?{Authorization:'Bearer '+token}:{}),'Content-Type':'application/json'});
+const say=(t,bad)=>{$('msg').textContent=t;$('msg').style.color=bad?'#c33':'inherit'};
+let touched=false;
+CATS.forEach(([k,n])=>$('cat').add(new Option(n+' ('+k+')',k)));
+$('cat').onchange=()=>touched=true;
+function suggest(){
+  if(touched)return;
+  const t=($('title').value+' '+$('text').value);
+  const hit=CATS.find(([k,n,re])=>k!=='other'&&re.test(t))||CATS[CATS.length-1];
+  $('cat').value=hit[0];$('hint').textContent='Auto category: '+hit[1]+' (you can change it)';
+}
+$('title').oninput=$('text').oninput=suggest;
+function show(){$('login').hidden=!!token;$('app').hidden=!token;if(token)load()}
+$('loginBtn').onclick=async()=>{
+  const r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('pass').value})});
+  const j=await r.json();
+  if(!r.ok){alert(j.error_description||j.msg||'Login failed');return}
+  token=j.access_token;sessionStorage.setItem('tok',token);show();
+};
+$('logout').onclick=()=>{sessionStorage.removeItem('tok');token=null;show()};
+$('save').onclick=async()=>{
+  const title=$('title').value.trim(),text=$('text').value.trim();
+  if(!title||!text){say('Title and poem are required.',1);return}
+  const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db',{method:'POST',headers:{...H(),Prefer:'return=representation'},body:JSON.stringify({title,text,author:$('author').value.trim()||'Shaina',category:$('cat').value})});
+  const j=await r.json();
+  if(!r.ok){say(j.message||'Save failed (session expired? log in again)',1);return}
+  say('Saved as poem #'+String(j[0].number).padStart(3,'0')+' ✓');
+  $('title').value=$('text').value='';touched=false;suggest();load();
+};
+async function load(){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db?select=number,title&order=number.desc',{headers:H()});
+  if(r.status===401){sessionStorage.removeItem('tok');token=null;show();return}
+  const rows=await r.json();$('list').replaceChildren();
+  rows.forEach(p=>{const d=document.createElement('div');d.className='row';
+    const s=document.createElement('span');s.textContent=String(p.number).padStart(3,'0')+' · '+p.title;
+    const b=document.createElement('button');b.className='s';b.textContent='Delete';
+    b.onclick=async()=>{if(!confirm('Delete "'+p.title+'"?'))return;await fetch(SUPABASE_URL+'/rest/v1/poems_db?number=eq.'+p.number,{method:'DELETE',headers:H()});load()};
+    d.append(s,b);$('list').append(d)});
+}
+$('imp').onclick=async()=>{
+  const f=$('file').files[0];if(!f){alert('Choose poems.json first');return}
+  const rows=JSON.parse(await f.text());
+  for(let i=0;i<rows.length;i+=25){
+    const r=await fetch(SUPABASE_URL+'/rest/v1/poems_db?on_conflict=number',{method:'POST',headers:{...H(),Prefer:'resolution=ignore-duplicates'},body:JSON.stringify(rows.slice(i,i+25))});
+    if(!r.ok){$('impmsg').textContent='Failed at '+i+': '+((await r.json()).message||r.status);return}
+    $('impmsg').textContent='Imported '+Math.min(i+25,rows.length)+' / '+rows.length;
+  }
+  load();
+};
+suggest();show();
+</script></body></html>
