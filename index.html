@@ -1092,7 +1092,7 @@
        ===================================================== */
 
     /* Every poem: number, title, author and the full text (\n = new line) */
-    const poems = []; // filled from the database (Supabase) on load
+    let poems = []; // loaded from Supabase (table poems_db) at start up
 
     /* Categories. A poem goes into the FIRST category whose `pattern` matches
        its title or text. "Other" is the fallback, so keep it last. */
@@ -1175,7 +1175,8 @@
     Object.entries(CATEGORY_LISTS).forEach(([key, nums]) => nums.split(',').forEach((n) => { CATEGORY_BY_NUMBER[n] = key; }));
 
     function categoryOf(poem) {
-      const key = CATEGORY_BY_NUMBER[poem.number] || 'other';
+      const fromDb = categories.some((c) => c.key === poem.category) ? poem.category : null;
+      const key = fromDb || CATEGORY_BY_NUMBER[poem.number] || 'other';
       return categories.find((c) => c.key === key).name;
     }
 
@@ -1408,41 +1409,39 @@
     }
 
     const poemByNumber = (n) => poems.find((poem) => poem.number === n);
-    const bestKey = Object.keys(FEATURED_BY_CATEGORY).find((k) => FEATURED_BY_CATEGORY[k] === BEST_POEM);
 
-    function renderFeatured() {
-      byId('spotlight').replaceChildren();
-      featured.replaceChildren();
-      byId('spotlight').append(makeFeatureCard(poemByNumber(BEST_POEM), bestKey, true));
+    const SUPABASE_URL = 'https://xbdjigqrhsptepibvmgq.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_1F9D8VbT7O7V6TN_Hx07gw_R0IrJIrA';
+
+    async function loadPoems() {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/poems_db?select=number,title,author,text,category&order=number.asc&limit=2000', {
+        headers: { apikey: SUPABASE_KEY }
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }
+
+    async function startUp() {
+      try {
+        poems = await loadPoems();
+      } catch (err) {
+        byId('spotlight').textContent = 'Could not load the poems right now. Please refresh in a moment.';
+        return;
+      }
+      if (!poems.length) {
+        byId('spotlight').textContent = 'No poems yet.';
+        return;
+      }
+      const best = poemByNumber(BEST_POEM) || poems[0];
+      const bestKey = categories.find((c) => c.name === categoryOf(best)).key;
+      byId('spotlight').append(makeFeatureCard(best, bestKey, true));
 
       categories.forEach((category) => {
         const poem = poemByNumber(FEATURED_BY_CATEGORY[category.key]);
         if (poem) featured.append(makeFeatureCard(poem, category.key, false));
       });
     }
-
-    /* =====================================================
-       DATABASE POEMS (Supabase) — poems added from admin.html
-       ===================================================== */
-    const SUPABASE_URL = 'PASTE_SUPABASE_URL';
-    const SUPABASE_ANON_KEY = 'PASTE_SUPABASE_ANON_KEY';
-
-    (async function loadDbPoems() {
-      if (SUPABASE_URL.startsWith('PASTE')) return;
-      try {
-        const res = await fetch(SUPABASE_URL + '/rest/v1/poems_db?select=number,title,author,text,category&order=number',
-          { headers: { apikey: SUPABASE_ANON_KEY } });
-        if (!res.ok) { byId('count').textContent = 'Could not load poems.'; return; }
-        const rows = await res.json();
-        rows.forEach((row) => {
-          poems.push({ number: row.number, title: row.title, author: row.author, text: row.text });
-          CATEGORY_BY_NUMBER[row.number] = row.category;
-        });
-        renderFeatured();
-        if (currentView === 'category' && currentCategory) renderCategory(currentCategory);
-        else if (currentView === 'search' && searchInput.value.trim()) renderSearch();
-      } catch (e) { console.warn('DB poems not loaded', e); }
-    })();
+    startUp();
   </script>
 </body>
 
