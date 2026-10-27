@@ -1,17 +1,49 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Admin — Forest of Words</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f3ec;--fg:#1f2a24;--card:#fff;--ac:#2f5d46;--bd:#d9d4c7}
-@media(prefers-color-scheme:dark){:root{--bg:#141a16;--fg:#e8efe9;--card:#1d2620;--ac:#7fbf9b;--bd:#33423a}}
-*{box-sizing:border-box}body{margin:0;padding:16px;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,sans-serif;max-width:640px;margin-inline:auto}
-.box{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:14px}
-input,textarea,select,button{width:100%;font:inherit;padding:10px;margin:6px 0;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
-textarea{min-height:260px}button{background:var(--ac);color:#fff;border:0;font-weight:600}button.s{width:auto;padding:4px 10px;background:#a33}
-.row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--bd)}
-#msg{min-height:1.4em}h1{font-size:1.3rem}
+:root{
+  --forest:#2f3a17;--leaf:#5c6b2b;--cream:#f7f4e9;--ink:#2f3419;--muted:#7a7c58;
+  --night-bar:#141b0b;--night-border:#3a4020;--night-text:#ece8d4;--night-soft:#c6c7aa;
+  --gold:#c9b87f;--gold-ink:#1a1c0a;
+  --grad-card:linear-gradient(150deg,#212b11 0%,#141b0b 100%);
+  --grad-gold:linear-gradient(135deg,#e6d9a6 0%,#c9b87f 55%,#aa976c 100%);
+  --grad-moss:linear-gradient(135deg,#2c3016 0%,#4a5a26 100%);
+  --serif:'Cormorant Garamond','Playfair Display',Georgia,serif;
+  --ui:'DM Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding:0 16px 40px;min-height:100vh;background:linear-gradient(180deg,#f7f4e9 0%,#ecead2 100%) fixed;color:var(--ink);font:14px/1.5 var(--ui);max-width:680px;margin-inline:auto}
+header{margin:0 -16px 22px;padding:34px 20px 30px;text-align:center;background:var(--grad-moss);color:var(--night-text);border-radius:0 0 26px 26px;box-shadow:0 10px 30px #0003}
+header .brand{font:italic 600 34px/1.1 var(--serif);letter-spacing:-.02em;margin:0}
+header p{margin:8px 0 0;font-size:13px;color:var(--night-soft)}
+.box{background:var(--grad-card);border:1px solid var(--night-border);border-radius:14px;padding:18px 18px 16px;margin-bottom:16px;color:var(--night-text);box-shadow:0 8px 25px #0003}
+.box b{display:block;font:italic 600 22px/1.2 var(--serif);letter-spacing:-.02em;margin-bottom:6px}
+.box small{color:var(--night-soft);font-size:12px}
+input,textarea,select,button{width:100%;font:inherit;font-size:14px;margin:7px 0}
+input,textarea,select{padding:12px 16px;border-radius:12px;border:1px solid #3d4422;background:linear-gradient(135deg,#1b200d,#101608);color:#f1ecd6;outline:none;box-shadow:0 3px 12px #0002}
+input::placeholder,textarea::placeholder{color:#9a9b7e}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 4px #c9b87f22}
+textarea{min-height:260px;resize:vertical;font-family:var(--serif);font-size:17px;line-height:1.55}
+select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(135deg,#1b200d,#101608)}
+input[type=file]{padding:10px 12px;font-size:12px;color:var(--night-soft)}
+button{padding:12px 16px;border:0;border-radius:30px;background:var(--grad-gold);color:var(--gold-ink);font-weight:700;cursor:pointer;box-shadow:0 5px 16px #0004;transition:.2s}
+button:hover{transform:translateY(-1px);box-shadow:0 8px 20px #0005}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.s{width:auto;margin:0;padding:6px 14px;font-size:12px;background:transparent;color:#e0a39a;border:1px solid #6b3a33;box-shadow:none}
+button.s:hover{background:#6b3a3355;transform:none}
+#logout{background:transparent;color:var(--muted);border:1px solid #b9b998;box-shadow:none;margin-top:4px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--night-border);color:var(--night-text)}
+.row:first-child{border-top:0}
+#msg,#impmsg{min-height:1.4em;font-size:13px;color:var(--gold)}
+#hint{display:block;margin:2px 4px 6px}
+@media (prefers-reduced-motion:reduce){button{transition:none}}
 </style></head><body>
-<h1>Admin · Add poem</h1>
+<header><h1 class="brand">Forest of Words</h1><p>Add a new poem to the collection</p></header>
 <div id="login" class="box">
   <input id="email" type="email" placeholder="Email" autocomplete="username">
   <input id="pass" type="password" placeholder="Password" autocomplete="current-password">
@@ -41,32 +73,7 @@ const CATS=[
   ['family','Belonging',/family|mother|father|parents|sister|brother|friend|friendship|best friend|pamilya|ina|ama|magulang|kaibigan|kapatid/i],
   ['faith','Grace',/god|jesus|faith|prayer|heaven|lord|church|bless|diyos|panginoon|panalangin|pananalig|biyaya/i],
   ['life','Dreams',/life|dream|future|journey|path|purpose|hope|tomorrow|begin again|destination|buhay|pangarap|paglalakbay|kinabukasan|panahon/i],
-  ['other','Whispers',/.*/
-      }
-    ];
-
-    /* =====================================================
-       HELPERS + DOM REFERENCES
-       ===================================================== */
-    const byId = (id) => document.getElementById(id);
-
-    const searchInput = byId('search');
-    const grid = byId('grid');
-    const featured = byId('featured');
-    const modal = byId('modal');
-
-    const menu = byId('categoryMenu');
-    const menuOverlay = byId('menuOverlay');
-    const menuToggle = byId('menuToggle');
-    const menuClose = byId('menuClose');
-    const menuLinks = document.querySelectorAll('.menu-link');
-    const currentLabel = byId('currentLabel');
-
-    /* 1 -> "001" */
-    const padNumber = (number) => String(number).padStart(3, '0');
-
-    /* Names of the poems shown first on the home page */
-    const FEATURED_TITLES = /people who stay|my first inspiration|gentle surrender|behind the noise|peace in his guidance|malayang damdamin/i]
+  ['other','Whispers',/.*/]
 ];
 const $=id=>document.getElementById(id);
 let token=sessionStorage.getItem('tok');
