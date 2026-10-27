@@ -939,6 +939,19 @@
 .cm.mine{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .cacts{display:flex;gap:8px;margin-top:6px}
 .cacts button{width:auto;margin:0;padding:5px 12px;border-radius:30px;border:1px solid #3a4020;background:transparent;color:inherit;font:600 12px var(--font-ui);cursor:pointer}
+.modal-bar{display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--line);background:var(--paper);flex:none;font-family:var(--font-ui)}
+.modal-bar .dt{margin-left:auto;font-size:11px;opacity:.5}
+dialog#modal[open]{display:flex;flex-direction:column;overflow:hidden}
+dialog#modal .modal-body{flex:1 1 auto;min-height:0;touch-action:manipulation}
+.sheet{position:absolute;left:0;right:0;bottom:50px;max-height:62%;overflow:auto;background:var(--paper);border-top:1px solid var(--line);box-shadow:0 -8px 24px #0c110722;padding:10px 16px 14px;font:400 13px/1.5 var(--font-ui);z-index:3}
+.sheet[hidden]{display:none}
+.sheet-head{display:flex;justify-content:space-between;align-items:center}
+.sheet-head b{font:italic 600 17px var(--font-serif)}
+.sheet-head button{width:auto;background:none;border:0;font-size:22px;line-height:1;color:inherit;cursor:pointer;padding:0 4px}
+#media img{display:block;width:100%;max-height:320px;object-fit:cover;border-radius:12px;margin:0 0 14px}
+#media audio{display:block;width:100%;margin:0 0 14px}
+.burst{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.4);font-size:96px;color:#e0707e;opacity:0;pointer-events:none;z-index:5;animation:burst .75s ease-out}
+@keyframes burst{15%{opacity:.95;transform:translate(-50%,-50%) scale(1.1)}60%{opacity:.9;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
 </style>
 </head>
 
@@ -999,7 +1012,7 @@
 
   <main>
 
-    <!-- ===== Home view ===== -->
+        <!-- ===== Home view ===== -->
     <section class="view active" id="view-home">
       <h2 class="section-title">The Best of the Forest</h2>
       <p class="sub">If you only read one poem today, let it be this one</p>
@@ -1020,7 +1033,7 @@
         <div class="script-line">with tenderness, always.</div>
       </div>
 
-            <div class="about-layout">
+      <div class="about-layout">
         <article class="about-panel">
           <div class="eyebrow">Behind the pages</div>
           <h2>Hi, I’m the heart behind these words.</h2>
@@ -1101,17 +1114,22 @@
       <button class="close" id="close" type="button" aria-label="Close">×</button>
     </div>
     <div class="modal-body">
+      <div id="media"></div>
       <div id="modalText"></div>
       <div class="byline">— shaina</div>
-      <div class="engage">
-        <button class="like" id="mLike" type="button"><span class="h">♡</span><span class="n">0</span></button>
-        <h4>Comments</h4>
-        <div id="cmList"></div>
-        <div class="cform">
-          <textarea id="cmBody" maxlength="500" placeholder="Leave a comment (anonymous)..."></textarea>
-          <button id="cmSend" type="button">Post</button><span class="cmsg" id="cmMsg"></span>
         </div>
+    <div class="sheet" id="sheet" hidden>
+      <div class="sheet-head"><b>Comments</b><button type="button" id="sheetClose" aria-label="Close comments">×</button></div>
+      <div id="cmList"></div>
+      <div class="cform">
+        <textarea id="cmBody" maxlength="500" placeholder="Leave a comment (anonymous)..."></textarea>
+        <button id="cmSend" type="button">Post</button><span class="cmsg" id="cmMsg"></span>
       </div>
+    </div>
+    <div class="modal-bar">
+      <button class="like" id="mLike" type="button"><span class="h">♡</span><span class="n">0</span></button>
+      <button class="like" id="cmBtn" type="button"><span class="h">💬</span><span class="n" id="cmCount">0</span></button>
+      <span class="dt">double-tap to ♥</span>
     </div>
   </dialog>
 
@@ -1245,6 +1263,13 @@
       byId('modalText').replaceChildren(...buildStanzas(poem.text));
       modal.showModal();
       currentPoem = poem.number;
+      const media = byId('media');
+      media.replaceChildren();
+      if (poem.image_url) { const im = document.createElement('img'); im.src = poem.image_url; im.alt = ''; im.loading = 'lazy'; media.append(im); }
+      if (poem.music_url) { const au = document.createElement('audio'); au.controls = true; au.preload = 'none'; au.src = poem.music_url; media.append(au); }
+      byId('sheet').hidden = true;
+      byId('cmCount').textContent = '0';
+      byId('modalText').parentElement.scrollTop = 0;
       byId('mLike').replaceWith(makeLikeButton(poem.number, 'mLike'));
       byId('cmMsg').textContent = '';
       loadComments(poem.number);
@@ -1400,26 +1425,7 @@
       });
     });
 
-    /* =====================================================
-       SEARCH + MODAL EVENTS
-       ===================================================== */
-    searchInput.addEventListener('input', () => {
-      if (searchInput.value.trim()) {
-        renderSearch();
-      } else if (currentView === 'search') {
-        renderHome();
-      } else if (currentView === 'category' && currentCategory) {
-        renderCategory(currentCategory);
-      }
-    });
-
-    byId('close').onclick = () => modal.close();
-
-    /* Clicking the dark area outside the dialog closes it */
-    modal.addEventListener('click', (event) => {
-      if (event.target === modal) modal.close();
-    });
-
+    
     /* =====================================================
        START UP: fill the featured poems on the home page
        (poems matching FEATURED_TITLES come first, then by number)
@@ -1458,9 +1464,9 @@
     const SUPABASE_KEY = 'sb_publishable_1F9D8VbT7O7V6TN_Hx07gw_R0IrJIrA';
 
     async function loadPoems() {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/poems_db?select=number,title,author,text,category&order=number.asc&limit=2000', {
-        headers: { apikey: SUPABASE_KEY }
-      });
+      const get = (cols) => fetch(SUPABASE_URL + '/rest/v1/poems_db?select=' + cols + '&order=number.asc&limit=2000', { headers: { apikey: SUPABASE_KEY } });
+      let res = await get('number,title,author,text,category,image_url,music_url');
+      if (!res.ok) res = await get('number,title,author,text,category'); // media columns not created yet
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
     }
@@ -1542,6 +1548,7 @@
         if (!r.ok) throw new Error();
         const rows = await r.json();
         if (currentPoem !== n) return;
+        byId('cmCount').textContent = rows.length;
         if (!rows.length) { box.textContent = 'No comments yet. Be the first.'; return; }
         box.replaceChildren(...rows.map((c) => renderComment(c, n)));
       } catch (e) { box.textContent = 'Could not load comments.'; }
@@ -1621,6 +1628,28 @@
         loadComments(currentPoem);
       } catch (e) { msg.textContent = 'Could not post. Try again.'; }
     };
+
+    /* sticky bar: comments sheet, double-tap heart, stop music on close */
+    byId('cmBtn').onclick = () => { const sh = byId('sheet'); sh.hidden = !sh.hidden; };
+    byId('sheetClose').onclick = () => { byId('sheet').hidden = true; };
+    modal.addEventListener('close', () => { byId('media').querySelectorAll('audio').forEach((a) => a.pause()); byId('sheet').hidden = true; });
+
+    let lastTap = { t: 0, x: 0, y: 0 };
+    byId('modalText').parentElement.addEventListener('pointerup', (e) => {
+      if (e.target.closest('button, audio, textarea, a')) return;
+      const now = Date.now();
+      const near = Math.abs(e.clientX - lastTap.x) < 40 && Math.abs(e.clientY - lastTap.y) < 40;
+      if (now - lastTap.t < 320 && near) {
+        lastTap.t = 0;
+        if (!myLikes.has(currentPoem)) byId('mLike').click();
+        const h = document.createElement('div');
+        h.className = 'burst'; h.textContent = '♥';
+        modal.append(h);
+        setTimeout(() => h.remove(), 800);
+      } else {
+        lastTap = { t: now, x: e.clientX, y: e.clientY };
+      }
+    });
 
     async function startUp() {
       try {
