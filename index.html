@@ -920,6 +920,23 @@
 .card .preview{margin-top:.4em}
 .modal-head h2{letter-spacing:.2em;font-style:normal}
   </style>
+<style>
+/* ---- hearts + comments ---- */
+.likerow{margin-top:10px}
+.like{display:inline-flex;align-items:center;gap:6px;width:auto;margin:0;padding:6px 12px;border-radius:30px;border:1px solid #3a4020;background:transparent;color:inherit;font:600 13px var(--font-ui);cursor:pointer}
+.like .h{font-size:16px;line-height:1}
+.like.on{color:#e0707e;border-color:#e0707e66}
+.like:active{transform:scale(.94)}
+.engage{border-top:1px solid #3a402055;margin-top:22px;padding-top:16px;font-family:var(--font-ui)}
+.engage h4{margin:18px 0 8px;font:italic 600 20px var(--font-serif)}
+.cm{padding:10px 0;border-bottom:1px solid #3a402033;font-size:14px;line-height:1.5}
+.cm b{font-size:13px}.cm small{opacity:.6;margin-left:6px}
+.cm p{margin:3px 0 0;white-space:pre-wrap;word-break:break-word}
+.cform input,.cform textarea{width:100%;box-sizing:border-box;margin:6px 0;padding:10px 12px;border-radius:12px;border:1px solid #3a4020;background:transparent;color:inherit;font:14px var(--font-ui)}
+.cform textarea{min-height:70px;resize:vertical}
+.cform button{padding:10px 18px;border:0;border-radius:30px;background:linear-gradient(135deg,#e6d9a6,#c9b87f 55%,#aa976c);color:#1a1c0a;font-weight:700;cursor:pointer}
+.cmsg{font-size:12px;opacity:.8;margin-left:8px}
+</style>
 </head>
 
 <body>
@@ -1013,7 +1030,7 @@
           <div class="quote">“May these words find the people who need them, exactly when they need them.”</div>
         </article>
 
-        <article class="about-panel">
+              <article class="about-panel">
           <div class="eyebrow">Explore the collection</div>
           <h2>Find the words you need.</h2>
           <p>
@@ -1044,7 +1061,7 @@
   </main>
 
   <!-- ===== Footer with social links ===== -->
-  <footer>
+ <footer>
     <div class="eyebrow">Connect with me</div>
     <div class="socials">
       <a class="social-link" href="https://www.facebook.com/share/1C8BGiQzLW/" target="_blank" rel="noopener noreferrer"
@@ -1083,6 +1100,16 @@
     <div class="modal-body">
       <div id="modalText"></div>
       <div class="byline">— shaina</div>
+      <div class="engage">
+        <button class="like" id="mLike" type="button"><span class="h">♡</span><span class="n">0</span></button>
+        <h4>Comments</h4>
+        <div id="cmList"></div>
+        <div class="cform">
+          <input id="cmName" maxlength="40" placeholder="Your name (optional)">
+          <textarea id="cmBody" maxlength="500" placeholder="Leave a comment..."></textarea>
+          <button id="cmSend" type="button">Post</button><span class="cmsg" id="cmMsg"></span>
+        </div>
+      </div>
     </div>
   </dialog>
 
@@ -1215,6 +1242,11 @@
       byId('modalTitle').textContent = padNumber(poem.number);
       byId('modalText').replaceChildren(...buildStanzas(poem.text));
       modal.showModal();
+      currentPoem = poem.number;
+      byId('mLike').replaceWith(makeLikeButton(poem.number, 'mLike'));
+      byId('cmMsg').textContent = '';
+      loadComments(poem.number);
+      logView(poem.number);
     }
 
     /* Builds one poem card element */
@@ -1239,7 +1271,17 @@
       readButton.textContent = 'Read poem ↗';
       readButton.onclick = () => openPoem(poem);
 
-      card.append(label, preview, readButton);
+      const likeRow = document.createElement('div');
+      likeRow.className = 'likerow';
+      likeRow.append(makeLikeButton(poem.number));
+      card.append(label, preview, readButton, likeRow);
+
+      /* Tapping anywhere on the card opens the poem (hearts and other buttons keep their own action) */
+      card.style.cursor = 'pointer';
+      card.onclick = (e) => {
+        if (e.target.closest('button')) return;
+        openPoem(poem);
+      };
       return card;
     }
 
@@ -1421,6 +1463,108 @@
       return res.json();
     }
 
+    /* ---------- visits, hearts, comments (Supabase) ---------- */
+    let currentPoem = null;
+    let likeCounts = {};
+    let myLikes = new Set();
+    const deviceId = (() => {
+      try {
+        let d = localStorage.getItem('fow_device');
+        if (!d) { d = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2) + Date.now()); localStorage.setItem('fow_device', d); }
+        return d;
+      } catch (e) { return 'tmp-' + Math.random().toString(36).slice(2) + Date.now(); }
+    })();
+    const sb = (path, opts = {}) => fetch(SUPABASE_URL + '/rest/v1/' + path, {
+      ...opts,
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json', ...(opts.headers || {}) }
+    });
+    const quiet = (p) => p.catch(() => {});
+
+    function logVisit() {
+      quiet(sb('visits?on_conflict=day,device_id', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' }, body: JSON.stringify({ device_id: deviceId }) }));
+    }
+    function logView(n) {
+      quiet(sb('poem_views?on_conflict=day,device_id,poem_number', { method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' }, body: JSON.stringify({ device_id: deviceId, poem_number: n }) }));
+    }
+
+    async function loadLikes() {
+      try {
+        const [c, m] = await Promise.all([
+          sb('rpc/like_counts', { method: 'POST', body: '{}' }).then((r) => r.json()),
+          sb('rpc/my_likes', { method: 'POST', body: JSON.stringify({ d: deviceId }) }).then((r) => r.json())
+        ]);
+        likeCounts = {}; c.forEach((x) => { likeCounts[x.poem_number] = Number(x.n); });
+        myLikes = new Set(m.map((x) => x.poem_number));
+      } catch (e) { /* hearts simply start at 0 */ }
+    }
+
+    function paintLike(btn) {
+      const n = Number(btn.dataset.like);
+      const on = myLikes.has(n);
+      btn.classList.toggle('on', on);
+      btn.querySelector('.h').textContent = on ? '♥' : '♡';
+      btn.querySelector('.n').textContent = likeCounts[n] || 0;
+    }
+    function repaintLikes() { document.querySelectorAll('[data-like]').forEach(paintLike); }
+
+    function makeLikeButton(n, id) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'like'; b.dataset.like = n;
+      if (id) b.id = id;
+      b.innerHTML = '<span class="h">♡</span><span class="n">0</span>';
+      b.onclick = async () => {
+        const was = myLikes.has(n);
+        if (was) { myLikes.delete(n); likeCounts[n] = Math.max(0, (likeCounts[n] || 1) - 1); }
+        else { myLikes.add(n); likeCounts[n] = (likeCounts[n] || 0) + 1; }
+        repaintLikes();
+        try {
+          const r = await sb('rpc/toggle_like', { method: 'POST', body: JSON.stringify({ p: n, d: deviceId }) });
+          if (!r.ok) throw new Error();
+        } catch (e) {
+          if (was) { myLikes.add(n); likeCounts[n] = (likeCounts[n] || 0) + 1; }
+          else { myLikes.delete(n); likeCounts[n] = Math.max(0, (likeCounts[n] || 1) - 1); }
+          repaintLikes();
+        }
+      };
+      paintLike(b);
+      return b;
+    }
+
+    async function loadComments(n) {
+      const box = byId('cmList');
+      box.textContent = 'Loading...';
+      try {
+        const r = await sb('poem_comments?select=name,body,created_at&poem_number=eq.' + n + '&order=created_at.desc&limit=50');
+        const rows = await r.json();
+        if (currentPoem !== n) return;
+        if (!rows.length) { box.textContent = 'No comments yet. Be the first.'; return; }
+        box.replaceChildren(...rows.map((c) => {
+          const d = document.createElement('div'); d.className = 'cm';
+          const b = document.createElement('b'); b.textContent = c.name || 'Anonymous';
+          const t = document.createElement('small'); t.textContent = new Date(c.created_at).toLocaleDateString();
+          const p = document.createElement('p'); p.textContent = c.body;
+          d.append(b, t, p); return d;
+        }));
+      } catch (e) { box.textContent = 'Could not load comments.'; }
+    }
+
+    let lastPost = 0;
+    byId('cmSend').onclick = async () => {
+      const body = byId('cmBody').value.trim();
+      const name = byId('cmName').value.trim() || 'Anonymous';
+      const msg = byId('cmMsg');
+      if (!body) { msg.textContent = 'Write something first.'; return; }
+      if (Date.now() - lastPost < 10000) { msg.textContent = 'Please wait a few seconds.'; return; }
+      lastPost = Date.now();
+      msg.textContent = 'Posting...';
+      try {
+        const r = await sb('poem_comments', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ poem_number: currentPoem, name, body }) });
+        if (!r.ok) throw new Error();
+        byId('cmBody').value = ''; msg.textContent = 'Posted!';
+        loadComments(currentPoem);
+      } catch (e) { msg.textContent = 'Could not post. Try again.'; }
+    };
+
     async function startUp() {
       try {
         poems = await loadPoems();
@@ -1432,6 +1576,8 @@
         byId('spotlight').textContent = 'No poems yet.';
         return;
       }
+      logVisit();
+      await loadLikes();
       const best = poemByNumber(BEST_POEM) || poems[0];
       const bestKey = categories.find((c) => c.name === categoryOf(best)).key;
       byId('spotlight').append(makeFeatureCard(best, bestKey, true));
