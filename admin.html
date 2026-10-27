@@ -51,6 +51,17 @@ button.s:hover{background:#6b3a3355;transform:none}
   <button id="loginBtn">Log in</button>
 </div>
 <div id="app" hidden>
+  <div class="box"><b>Visitors</b>
+    <div id="vstats" style="display:flex;gap:10px;text-align:center;margin:8px 0">
+      <div style="flex:1"><div id="vTotal" style="font:italic 600 30px var(--serif)">0</div><small>Total visits</small></div>
+      <div style="flex:1"><div id="vToday" style="font:italic 600 30px var(--serif)">0</div><small>Today</small></div>
+      <div style="flex:1"><div id="vWeek" style="font:italic 600 30px var(--serif)">0</div><small>Last 7 days</small></div>
+    </div>
+    <small>One visit = one device per day.</small>
+  </div>
+  <div class="box"><b>Most read</b><div id="topViews"></div></div>
+  <div class="box"><b>Most hearted</b><div id="topLikes"></div></div>
+  <div class="box"><b>Comments</b><div id="cmAdmin"></div></div>
   <div class="box">
     <input id="title" placeholder="Title">
     <input id="author" value="Shaina" placeholder="Author">
@@ -90,7 +101,29 @@ function suggest(){
   $('cat').value=hit[0];$('hint').textContent='Auto category: '+hit[1]+' (you can change it)';
 }
 $('title').oninput=$('text').oninput=suggest;
-function show(){$('login').hidden=!!token;$('app').hidden=!token;if(token)load()}
+
+async function stats(){
+  const g=async p=>{try{const r=await fetch(SUPABASE_URL+'/rest/v1/'+p,{headers:H()});return r.ok?await r.json():[]}catch(e){return[]}};
+  const [v,pv,cm,po]=await Promise.all([g('visits?select=day&limit=100000'),g('poem_views?select=poem_number&limit=100000'),
+    g('poem_comments?select=id,poem_number,name,body,created_at&order=created_at.desc&limit=100'),g('poems_db?select=number,title&limit=2000')]);
+  let lk=[];try{const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/like_counts',{method:'POST',headers:H(),body:'{}'});if(r.ok)lk=await r.json()}catch(e){}
+  const title={};po.forEach(p=>title[p.number]=p.title);
+  const nm=n=>String(n).padStart(3,'0')+' · '+(title[n]||'');
+  const today=new Date().toISOString().slice(0,10),wk=new Date(Date.now()-6*864e5).toISOString().slice(0,10);
+  $('vTotal').textContent=v.length;$('vToday').textContent=v.filter(x=>x.day===today).length;$('vWeek').textContent=v.filter(x=>x.day>=wk).length;
+  const top=(map,el)=>{const a=Object.entries(map).sort((x,y)=>y[1]-x[1]).slice(0,5);el.replaceChildren();
+    if(!a.length){el.textContent='Nothing yet.';return}
+    a.forEach(([n,c])=>{const d=document.createElement('div');d.className='row';const s=document.createElement('span');s.textContent=nm(n);const t=document.createElement('span');t.textContent=c;d.append(s,t);el.append(d)})};
+  const vm={};pv.forEach(x=>vm[x.poem_number]=(vm[x.poem_number]||0)+1);top(vm,$('topViews'));
+  const lm={};lk.forEach(x=>lm[x.poem_number]=Number(x.n));top(lm,$('topLikes'));
+  const box=$('cmAdmin');box.replaceChildren();if(!cm.length)box.textContent='No comments yet.';
+  cm.forEach(c=>{const d=document.createElement('div');d.className='row';d.style.alignItems='flex-start';
+    const s=document.createElement('span');s.style.wordBreak='break-word';s.textContent=nm(c.poem_number)+' — '+(c.name||'Anonymous')+': '+c.body;
+    const b=document.createElement('button');b.className='s';b.textContent='Delete';
+    b.onclick=async()=>{if(!confirm('Delete this comment?'))return;await fetch(SUPABASE_URL+'/rest/v1/poem_comments?id=eq.'+c.id,{method:'DELETE',headers:H()});stats()};
+    d.append(s,b);box.append(d)});
+}
+function show(){$('login').hidden=!!token;$('app').hidden=!token;if(token){load();stats()}}
 $('loginBtn').onclick=async()=>{
   const r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:$('email').value,password:$('pass').value})});
   const j=await r.json();
