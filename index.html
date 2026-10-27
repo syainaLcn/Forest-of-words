@@ -923,19 +923,22 @@
 <style>
 /* ---- hearts + comments ---- */
 .likerow{margin-top:10px}
-.like{display:inline-flex;align-items:center;gap:6px;width:auto;margin:0;padding:6px 12px;border-radius:30px;border:1px solid #3a4020;background:transparent;color:inherit;font:600 13px var(--font-ui);cursor:pointer}
-.like .h{font-size:16px;line-height:1}
+.like{display:inline-flex;align-items:center;gap:5px;width:auto;margin:0;padding:5px 11px;border-radius:30px;border:1px solid #3a4020;background:transparent;color:inherit;font:600 12px var(--font-ui);cursor:pointer}
+.like .h{font-size:15px;line-height:1}
 .like.on{color:#e0707e;border-color:#e0707e66}
 .like:active{transform:scale(.94)}
-.engage{border-top:1px solid #3a402055;margin-top:22px;padding-top:16px;font-family:var(--font-ui)}
-.engage h4{margin:18px 0 8px;font:italic 600 20px var(--font-serif)}
-.cm{padding:10px 0;border-bottom:1px solid #3a402033;font-size:14px;line-height:1.5}
-.cm b{font-size:13px}.cm small{opacity:.6;margin-left:6px}
-.cm p{margin:3px 0 0;white-space:pre-wrap;word-break:break-word}
-.cform input,.cform textarea{width:100%;box-sizing:border-box;margin:6px 0;padding:10px 12px;border-radius:12px;border:1px solid #3a4020;background:transparent;color:inherit;font:14px var(--font-ui)}
+.engage{border-top:1px solid #3a402055;margin-top:22px;padding-top:16px;font:400 13px/1.5 var(--font-ui)}
+.engage h4{margin:16px 0 6px;font:italic 600 17px var(--font-serif)}
+.cm{padding:8px 0;border-bottom:1px solid #3a402033;font-size:13px;line-height:1.5}
+.cm small{display:block;opacity:.55;font-size:11px;margin-top:2px}
+.cm p{margin:0;white-space:pre-wrap;word-break:break-word}
+.cform input,.cform textarea{width:100%;box-sizing:border-box;margin:6px 0;padding:10px 12px;border-radius:12px;border:1px solid #3a4020;background:transparent;color:inherit;font:13px var(--font-ui)}
 .cform textarea{min-height:70px;resize:vertical}
-.cform button{padding:10px 18px;border:0;border-radius:30px;background:linear-gradient(135deg,#e6d9a6,#c9b87f 55%,#aa976c);color:#1a1c0a;font-weight:700;cursor:pointer}
+.cform button{padding:8px 16px;font-size:13px;border:0;border-radius:30px;background:linear-gradient(135deg,#e6d9a6,#c9b87f 55%,#aa976c);color:#1a1c0a;font-weight:700;cursor:pointer}
 .cmsg{font-size:12px;opacity:.8;margin-left:8px}
+.cm.mine{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.cacts{display:flex;gap:8px;margin-top:6px}
+.cacts button{width:auto;margin:0;padding:5px 12px;border-radius:30px;border:1px solid #3a4020;background:transparent;color:inherit;font:600 12px var(--font-ui);cursor:pointer}
 </style>
 </head>
 
@@ -1017,7 +1020,7 @@
         <div class="script-line">with tenderness, always.</div>
       </div>
 
-      <div class="about-layout">
+            <div class="about-layout">
         <article class="about-panel">
           <div class="eyebrow">Behind the pages</div>
           <h2>Hi, I’m the heart behind these words.</h2>
@@ -1030,7 +1033,7 @@
           <div class="quote">“May these words find the people who need them, exactly when they need them.”</div>
         </article>
 
-              <article class="about-panel">
+        <article class="about-panel">
           <div class="eyebrow">Explore the collection</div>
           <h2>Find the words you need.</h2>
           <p>
@@ -1105,8 +1108,7 @@
         <h4>Comments</h4>
         <div id="cmList"></div>
         <div class="cform">
-          <input id="cmName" maxlength="40" placeholder="Your name (optional)">
-          <textarea id="cmBody" maxlength="500" placeholder="Leave a comment..."></textarea>
+          <textarea id="cmBody" maxlength="500" placeholder="Leave a comment (anonymous)..."></textarea>
           <button id="cmSend" type="button">Post</button><span class="cmsg" id="cmMsg"></span>
         </div>
       </div>
@@ -1530,35 +1532,90 @@
       return b;
     }
 
+    const rpc = (fn, args) => sb('rpc/' + fn, { method: 'POST', body: JSON.stringify(args) });
+
     async function loadComments(n) {
       const box = byId('cmList');
       box.textContent = 'Loading...';
       try {
-        const r = await sb('poem_comments?select=name,body,created_at&poem_number=eq.' + n + '&order=created_at.desc&limit=50');
+        const r = await rpc('get_comments', { p: n, d: deviceId });
+        if (!r.ok) throw new Error();
         const rows = await r.json();
         if (currentPoem !== n) return;
         if (!rows.length) { box.textContent = 'No comments yet. Be the first.'; return; }
-        box.replaceChildren(...rows.map((c) => {
-          const d = document.createElement('div'); d.className = 'cm';
-          const b = document.createElement('b'); b.textContent = c.name || 'Anonymous';
-          const t = document.createElement('small'); t.textContent = new Date(c.created_at).toLocaleDateString();
-          const p = document.createElement('p'); p.textContent = c.body;
-          d.append(b, t, p); return d;
-        }));
+        box.replaceChildren(...rows.map((c) => renderComment(c, n)));
       } catch (e) { box.textContent = 'Could not load comments.'; }
+    }
+
+    function renderComment(c, n) {
+      const d = document.createElement('div');
+      d.className = 'cm' + (c.mine ? ' mine' : '');
+      const p = document.createElement('p'); p.textContent = c.body;
+      const t = document.createElement('small');
+      t.textContent = new Date(c.created_at).toLocaleDateString() + (c.edited ? ' · edited' : '') + (c.mine ? ' · yours (hold to edit)' : '');
+      d.append(p, t);
+      if (!c.mine) return d;
+
+      /* long press on your own comment shows Edit / Delete */
+      let timer = null;
+      const cancel = () => { clearTimeout(timer); timer = null; };
+      d.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button, textarea')) return;
+        cancel();
+        timer = setTimeout(() => showActions(d, c, p, n), 500);
+      });
+      ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((ev) => d.addEventListener(ev, cancel));
+      d.addEventListener('contextmenu', (e) => e.preventDefault());
+      return d;
+    }
+
+    function showActions(d, c, p, n) {
+      if (d.querySelector('.cacts')) return;
+      const bar = document.createElement('div');
+      bar.className = 'cacts';
+      const mk = (label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = fn; return b; };
+      bar.append(
+        mk('Edit', () => startEdit(d, c, p, n, bar)),
+        mk('Delete', async () => {
+          if (!confirm('Delete your comment?')) return;
+          try { const r = await rpc('delete_comment', { c: c.id, d: deviceId }); if (!r.ok) throw new Error(); } catch (e) { alert('Could not delete. Try again.'); return; }
+          loadComments(n);
+        }),
+        mk('Cancel', () => bar.remove())
+      );
+      d.append(bar);
+    }
+
+    function startEdit(d, c, p, n, bar) {
+      bar.remove();
+      const ta = document.createElement('textarea');
+      ta.maxLength = 500; ta.value = c.body;
+      ta.style.cssText = 'width:100%;box-sizing:border-box;margin:6px 0;padding:8px 10px;border-radius:10px;border:1px solid #3a4020;background:transparent;color:inherit;font:13px var(--font-ui);min-height:60px';
+      const acts = document.createElement('div'); acts.className = 'cacts';
+      const save = document.createElement('button'); save.type = 'button'; save.textContent = 'Save';
+      const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Cancel';
+      cancel.onclick = () => loadComments(n);
+      save.onclick = async () => {
+        const body = ta.value.trim();
+        if (!body) return;
+        try { const r = await rpc('edit_comment', { c: c.id, d: deviceId, b: body }); if (!r.ok) throw new Error(); } catch (e) { alert('Could not save. Try again.'); return; }
+        loadComments(n);
+      };
+      acts.append(save, cancel);
+      p.replaceWith(ta); d.append(acts);
+      ta.focus();
     }
 
     let lastPost = 0;
     byId('cmSend').onclick = async () => {
       const body = byId('cmBody').value.trim();
-      const name = byId('cmName').value.trim() || 'Anonymous';
       const msg = byId('cmMsg');
       if (!body) { msg.textContent = 'Write something first.'; return; }
       if (Date.now() - lastPost < 10000) { msg.textContent = 'Please wait a few seconds.'; return; }
       lastPost = Date.now();
       msg.textContent = 'Posting...';
       try {
-        const r = await sb('poem_comments', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ poem_number: currentPoem, name, body }) });
+        const r = await rpc('add_comment', { p: currentPoem, b: body, d: deviceId });
         if (!r.ok) throw new Error();
         byId('cmBody').value = ''; msg.textContent = 'Posted!';
         loadComments(currentPoem);
