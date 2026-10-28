@@ -1386,6 +1386,56 @@ html {
     -webkit-text-size-adjust: 100%;
 }
 
+body.site dialog#modal {
+    background: linear-gradient(160deg, #1f2a10 0%, #141b0b 100%);
+    border-color: #a8935a;
+    color: var(--night-text);
+}
+
+body.site .modal-head {
+    background: linear-gradient(135deg, #0c1107 0%, #2c3016 100%);
+}
+
+body.site .modal-body {
+    background: transparent;
+    color: var(--night-text);
+}
+
+body.site .byline {
+    color: var(--night-accent);
+}
+
+body.site .modal-bar {
+    background: #0c110799;
+    border-top-color: #d1e2cb22;
+    color: var(--night-text);
+}
+
+body.site .modal-bar .like {
+    color: var(--night-text);
+    border-color: #d1e2cb44;
+}
+
+body.site .modal-bar .like.on {
+    color: #e0707e;
+    border-color: #e0707e66;
+}
+
+body.site .sheet {
+    background: #151d0b;
+    border-top-color: #d1e2cb22;
+    color: var(--night-text);
+}
+
+body.site .sheet .cm {
+    border-bottom-color: #d1e2cb22;
+}
+
+body.site .sheet .cform textarea,
+body.site .sheet .cacts button {
+    border-color: #d1e2cb44;
+}
+
 body.admin {
     margin: 0;
     padding: 0 16px 40px;
