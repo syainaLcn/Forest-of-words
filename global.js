@@ -805,7 +805,82 @@ function startAdminPage() {
         ['life', 'Dreams', /life|dream|future|journey|path|purpose|hope|tomorrow|begin again|destination|buhay|pangarap|paglalakbay|kinabukasan|panahon/i],
         ['other', 'Whispers', /.*/]
     ];
-    let token = sessionStorage.getItem('tok');
+    const SESSION_KEY = 'fow_session';
+    let token = null;
+
+    const readSession = () => {
+        try {
+            return JSON.parse(localStorage.getItem(SESSION_KEY));
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const saveSession = (data) => {
+        token = data.access_token;
+        try {
+            localStorage.setItem(SESSION_KEY, JSON.stringify({
+                access: data.access_token,
+                refresh: data.refresh_token,
+                exp: data.expires_at || Math.floor(Date.now() / 1000) + (data.expires_in || 3600)
+            }));
+        } catch (e) {
+        }
+    };
+
+    const clearSession = () => {
+        token = null;
+        try {
+            localStorage.removeItem(SESSION_KEY);
+        } catch (e) {
+        }
+    };
+
+    async function refreshSession() {
+        const saved = readSession();
+        if (!saved || !saved.refresh) {
+            clearSession();
+            return false;
+        }
+        try {
+            const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+                method: 'POST',
+                headers: {
+                    apikey: SUPABASE_ANON_KEY,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refresh_token: saved.refresh })
+            });
+            const data = await r.json();
+            if (!r.ok) {
+                clearSession();
+                return false;
+            }
+            saveSession(data);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    async function restoreSession() {
+        const saved = readSession();
+        if (!saved) {
+            return;
+        }
+        if (saved.exp - 60 > Date.now() / 1000) {
+            token = saved.access;
+            return;
+        }
+        await refreshSession();
+    }
+
+    setInterval(() => {
+        if (token) {
+            refreshSession();
+        }
+    }, 30 * 60 * 1000);
+
     const H = () => ({
         apikey: SUPABASE_ANON_KEY, ...(token ? { Authorization: 'Bearer ' + token } : {}), 'Content-Type': 'application/json'
     });
@@ -936,14 +1011,12 @@ function startAdminPage() {
             alert(j.error_description || j.msg || 'Login failed');
             return;
         }
-        token = j.access_token;
-        sessionStorage.setItem('tok', token);
+        saveSession(j);
         show();
     };
 
     $('logout').onclick = () => {
-        sessionStorage.removeItem('tok');
-        token = null;
+        clearSession();
         show();
     };
 
@@ -1223,8 +1296,10 @@ function startAdminPage() {
     async function load() {
         let r = await fetch(SUPABASE_URL + '/rest/v1/poems_db?select=number,title,author,text,category,image_url,music_url,guest,status&order=number.desc&limit=2000', { headers: H() });
         if (r.status === 401) {
-            sessionStorage.removeItem('tok');
-            token = null;
+            if (await refreshSession()) {
+                return load();
+            }
+            clearSession();
             show();
             return;
         }
@@ -1261,7 +1336,7 @@ function startAdminPage() {
     };
 
     suggest();
-    show();
+    restoreSession().then(show);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
