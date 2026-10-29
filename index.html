@@ -1,5 +1,233 @@
 <!DOCTYPE html>
 <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Forest of Words — Shaina’s Poetry</title>
+
+  <link rel="icon" type="image/png" href="data:image/png;base64,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">
+  <link rel="apple-touch-icon" href="data:image/png;base64,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">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,500&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="global.css?v=2">
+  <script src="global.js?v=2"></script>
+</head>
+
+<body class="site">
+
+  <nav class="topbar" aria-label="Poem categories">
+    <span class="topbar-label" id="currentLabel">Home</span>
+    <button class="burger" id="menuToggle" type="button" aria-label="Open categories menu" aria-expanded="false"
+      aria-controls="categoryMenu">
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+    </button>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="cover">
+        <div class="brand">Forest of Words</div>
+        <p>
+          Welcome to my little forest. Here, every poem has a place to rest — from words I was afraid to say,
+          to memories I still carry, and the little things that make life beautiful. Take your time and read
+          what speaks to you.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <div class="menu-overlay" id="menuOverlay"></div>
+  <aside class="menu" id="categoryMenu" aria-label="Categories">
+    <div class="menu-head">
+      <span class="eyebrow">Categories</span>
+      <button class="menu-close" id="menuClose" type="button" aria-label="Close menu">×</button>
+    </div>
+    <ul class="menu-list">
+      <li><button class="menu-link active" type="button" data-view="home">Home</button></li>
+      <li><button class="menu-link" type="button" data-view="love">Heart</button></li>
+      <li><button class="menu-link" type="button" data-view="self">Mirror</button></li>
+      <li><button class="menu-link" type="button" data-view="healing">Dawn</button></li>
+      <li><button class="menu-link" type="button" data-view="family">Belonging</button></li>
+      <li><button class="menu-link" type="button" data-view="faith">Grace</button></li>
+      <li><button class="menu-link" type="button" data-view="life">Dreams</button></li>
+      <li><button class="menu-link" type="button" data-view="other">Whispers</button></li>
+      <li><button class="menu-link" type="button" data-view="community">Community</button></li>
+      <li><button class="menu-link" type="button" data-view="submit">✎ Share your poem</button></li>
+    </ul>
+  </aside>
+
+  <div class="global-search">
+    <div class="search-wrap">
+      <span>⌕</span>
+      <input id="search" type="search" placeholder="Search 001 or words from a poem…">
+    </div>
+  </div>
+
+  <main>
+
+    <section class="view active" id="view-home">
+      <h2 class="section-title">The Best of the Forest</h2>
+      <p class="sub">If you only read one poem today, let it be this one</p>
+      <div class="spotlight" id="spotlight"></div>
+
+      <h2 class="section-title small">One Poem from Every Category</h2>
+      <p class="sub">My favorite page from each corner of the forest</p>
+      <div class="feature-grid" id="featured"></div>
+
+      <div class="feature-note">
+        <div class="eyebrow">A thought to keep</div>
+        <h2>Even the quietest things are growing.</h2>
+        <p>
+          Like a garden after rain, we can be changing in ways no one sees. These pages are for the in-between
+          moments: the almosts, the goodbyes, the tiny beginnings, and the feelings that take their time
+          becoming words.
+        </p>
+        <div class="script-line">with tenderness, always.</div>
+      </div>
+
+      <div class="about-layout">
+        <article class="about-panel">
+          <div class="eyebrow">Behind the pages</div>
+          <h2>Hi, I’m the heart behind these words.</h2>
+          <p>
+            This is a little home for my poems—words about growing, family, faith, longing, and the feelings we
+            sometimes keep hidden. Some poems help me understand myself; others help me let go. I hope you find
+            a piece of yourself in them, too.
+          </p>
+          <p>Every poem comes from a different corner of the heart, and every page holds something worth keeping.</p>
+          <div class="quote">“May these words find the people who need them, exactly when they need them.”</div>
+        </article>
+
+        <article class="about-panel">
+          <div class="eyebrow">Explore the collection</div>
+          <h2>Find the words you need.</h2>
+          <p>
+            Use the search bar above on any page. Search by poem number, title, or even a word you remember from
+            a line. Browse a category whenever you want to sit with one kind of feeling.
+          </p>
+          <p class="script-line">one page at a time.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="view" id="view-category">
+      <h2 class="section-title" id="categoryTitle">Heart</h2>
+      <p class="category-intro" id="categoryDesc">Poems for the heart, its wishes, and its goodbyes.</p>
+      <div class="count" id="count"></div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section class="view" id="view-search">
+      <h2 class="section-title">Search results</h2>
+      <p class="category-intro" id="searchDesc">Matching poems from the entire collection.</p>
+      <div class="count" id="searchCount"></div>
+      <div class="grid" id="searchGrid"></div>
+    </section>
+
+    <section class="view" id="view-submit">
+      <h2 class="section-title">Share your poem</h2>
+      <p class="category-intro">Your poem will appear in Community after it has been approved.</p>
+      <div class="sform">
+        <label for="sAuthor">Your name or pen name</label>
+        <input id="sAuthor" type="text" maxlength="60">
+        <label for="sTitle">Title</label>
+        <input id="sTitle" type="text" maxlength="100">
+        <label for="sText">Your poem</label>
+        <textarea id="sText" maxlength="8000" placeholder="Enter = new line, blank line = new stanza"></textarea>
+        <label for="sImg">Picture (optional)</label>
+        <input id="sImg" type="file" accept="image/*">
+        <label for="sMus">Music (optional, mp3 up to 8 MB)</label>
+        <input id="sMus" type="file" accept="audio/*">
+        <input class="hp" id="sSite" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button id="sSend" type="button">Send for approval</button>
+        <div id="sMsg"></div>
+        <small>By sending, you confirm this poem is yours. Poems that are not a fit may be declined.</small>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="eyebrow">Connect with me</div>
+    <div class="socials">
+      <a class="social-link" href="https://www.facebook.com/share/1C8BGiQzLW/" target="_blank" rel="noopener noreferrer"
+        aria-label="Shaina on Facebook">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13.5 22v-8.2h2.8l.5-3.3h-3.3V8.4c0-1 .4-1.7 1.8-1.7h1.6V3.8c-.3 0-1.3-.2-2.5-.2-2.6 0-4.2 1.6-4.2 4.4v2.5H7.4v3.3h2.8V22h3.3z" />
+        </svg>
+        Facebook
+      </a>
+      <a class="social-link" href="https://www.instagram.com/forestwords.shaina?cplk=MWU2bWZsaWYwbHhldQ==" target="_blank"
+        rel="noopener noreferrer" aria-label="Shaina on Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 2A3.5 3.5 0 0 0 4 7.5v9A3.5 3.5 0 0 0 7.5 20h9a3.5 3.5 0 0 0 3.5-3.5v-9A3.5 3.5 0 0 0 16.5 4h-9zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm5.3-3.3a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z" />
+        </svg>
+        Instagram
+      </a>
+      <a class="social-link" href="mailto:shaina.lcn@gmail.com" aria-label="Email Shaina">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1.4 2L12 12.6 19.6 7H4.4zM4 8.9V17h16V8.9l-8 5.9-8-5.9z" />
+        </svg>
+        shaina.lcn@gmail.com
+      </a>
+      <a class="social-link" href="#" id="shareLink">✎ Share your poem</a>
+    </div>
+    FOREST OF WORDS · A POETRY COLLECTION
+  </footer>
+
+  <dialog id="modal">
+    <div class="modal-head">
+      <div>
+        <div class="eyebrow" id="modalEyebrow"></div>
+        <h2 id="modalTitle"></h2>
+      </div>
+      <button class="close" id="close" type="button" aria-label="Close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div id="media"></div>
+      <div id="modalText"></div>
+      <div class="byline" id="modalBy">— shaina</div>
+    </div>
+
+    <div class="sheet" id="sheet" hidden>
+      <div class="sheet-head">
+        <b>Comments</b>
+        <button type="button" id="sheetClose" aria-label="Close comments">×</button>
+      </div>
+      <div id="cmList"></div>
+      <div class="cform">
+        <textarea id="cmBody" maxlength="500" placeholder="Leave a comment (anonymous)..."></textarea>
+        <button id="cmSend" type="button">Post</button>
+        <span class="cmsg" id="cmMsg"></span>
+      </div>
+    </div>
+
+    <div class="modal-bar">
+      <button class="like" id="mLike" type="button">
+        <span class="h">♡</span>
+        <span class="n">0</span>
+      </button>
+      <button class="like" id="cmBtn" type="button">
+        <span class="h">💬</span>
+        <span class="n" id="cmCount">0</span>
+      </button>
+      <span class="dt">double-tap to ♥</span>
+    </div>
+  </dialog>
+</body>
+
+</html>
+
 
 <head>
   <meta charset="utf-8">
