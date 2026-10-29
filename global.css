@@ -1772,7 +1772,7 @@ body.site dialog#modal .modal-body .stanza {
 body.site dialog#modal .byline {
     flex: none;
     margin-top: .8em;
-    font-size: max(13px, 1em);
+    font-size: clamp(12px, .75em, 18px);
 }
 
 @media (max-width: 640px) {
