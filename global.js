@@ -149,7 +149,7 @@ function startIndexPage() {
 
     function openPoem(poem) {
         byId('modalTitle').textContent = poem.guest ? poem.title : padNumber(poem.number);
-        byId('modalEyebrow').textContent = poem.guest ? 'Community poem · by ' + poem.author : 'A poem by Shaina';
+        byId('modalEyebrow').textContent = poem.guest ? 'Community poem · by ' + poem.author : '';
         byId('modalBy').textContent = '— ' + (poem.guest ? poem.author : 'shaina');
         byId('modalText').replaceChildren(...buildStanzas(poem.text));
         modal.showModal();
@@ -184,7 +184,7 @@ function startIndexPage() {
         card.className = 'card';
         const label = document.createElement('div');
         label.className = 'num';
-        label.textContent = padNumber(poem.number) + ' · ' + categoryOf(poem);
+        label.textContent = poem.guest ? 'Community' : padNumber(poem.number) + ' · ' + categoryOf(poem);
         const title = document.createElement('h3');
         title.textContent = poem.title;
         const preview = document.createElement('p');
@@ -271,7 +271,7 @@ function startIndexPage() {
             list = list.filter((poem) => matches.includes(poem));
         }
         grid.replaceChildren(...list.map(makeCard));
-        byId('count').textContent = `${list.length} poems · numbered 001–${padNumber(poems.length)}`;
+        byId('count').textContent = `${list.length} poems · numbered 001–${padNumber(poems.reduce((max, poem) => poem.guest ? max : Math.max(max, poem.number), 0))}`;
         showView('category', category.name, category.key);
     }
 
@@ -855,7 +855,7 @@ function startAdminPage() {
         $('oPoems').textContent = po.length;
         const title = {};
         po.forEach(p => title[p.number] = p.title);
-        const nm = n => String(n).padStart(3, '0') + ' · ' + (title[n] || '');
+        const nm = n => (n >= 100000 ? 'Community' : String(n).padStart(3, '0')) + ' · ' + (title[n] || '');
         const today = new Date().toISOString().slice(0, 10);
         const wk = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10);
         $('vTotal').textContent = v.length;
@@ -1034,8 +1034,8 @@ function startAdminPage() {
     $('save').onclick = async () => {
         const title = $('title').value.trim();
         const text = $('text').value.trim();
-        if (!title || !text) {
-            say('Title and poem are required.', 1);
+        if (!text) {
+            say('Please write the poem.', 1);
             return;
         }
         say('Saving...');
@@ -1088,7 +1088,7 @@ function startAdminPage() {
 
     function startEdit(p) {
         editing = p.number;
-        $('title').value = p.title;
+        $('title').value = p.title || '';
         $('text').value = p.text;
         $('author').value = p.author || 'Shaina';
         touched = true;
@@ -1107,13 +1107,13 @@ function startAdminPage() {
 
     function render() {
         const q = $('q').value.trim().toLowerCase().replace(/^#/, '');
-        const rows = ALL.filter(p => !q || p.title.toLowerCase().includes(q) || String(p.number) === q.replace(/^0+/, '') || pad(p.number).includes(q));
+        const rows = ALL.filter(p => !q || (p.title || '').toLowerCase().includes(q) || p.text.toLowerCase().includes(q) || String(p.number) === q.replace(/^0+/, '') || pad(p.number).includes(q));
         $('list').replaceChildren();
         rows.slice(0, shown).forEach(p => {
             const d = document.createElement('div');
             d.className = 'row';
             const s = document.createElement('span');
-            s.textContent = (p.guest ? '👤 ' : '') + pad(p.number) + ' · ' + p.title + (p.guest ? ' — by ' + p.author : '');
+            s.textContent = (p.guest ? '👤 ' : pad(p.number) + ' · ') + (p.title || p.text.split('\n')[0].slice(0, 40)) + (p.guest ? ' — by ' + p.author : '');
             const e = document.createElement('button');
             e.className = 's';
             e.textContent = 'Edit';
@@ -1122,7 +1122,7 @@ function startAdminPage() {
             x.className = 's';
             x.textContent = 'Delete';
             x.onclick = async () => {
-                if (!confirm('Delete "' + p.title + '"?')) {
+                if (!confirm('Delete "' + (p.title || pad(p.number)) + '"?')) {
                     return;
                 }
                 await fetch(SUPABASE_URL + '/rest/v1/poems_db?number=eq.' + p.number, {
