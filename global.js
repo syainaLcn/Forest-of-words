@@ -147,6 +147,87 @@ function startIndexPage() {
         });
     }
 
+    function fitPoem() {
+        if (!modal.open) {
+            return;
+        }
+        const t = byId('modalText');
+        const body = t.parentElement;
+        const pic = byId('media').querySelector('img');
+        const lh = (s) => (s >= 20 ? 1.7 : s >= 14 ? 1.55 : 1.42);
+        const set = (s) => {
+            body.style.fontSize = s + 'px';
+            body.style.lineHeight = lh(s);
+        };
+        const fits = () => t.scrollHeight <= t.clientHeight + 1 && t.scrollWidth <= t.clientWidth + 1;
+        const tall = t.querySelectorAll('.stanza').length >= 6;
+        modal.classList.toggle('tall', tall);
+        if (tall) {
+            if (pic) {
+                pic.style.maxHeight = '';
+            }
+            t.style.columnCount = 'auto';
+            const want = window.innerWidth >= 700 ? 20 : 17;
+            set(want);
+            if (!fits()) {
+                let lo = 10;
+                let hi = want;
+                while (hi - lo > 0.25) {
+                    const mid = (lo + hi) / 2;
+                    set(mid);
+                    if (fits()) {
+                        lo = mid;
+                    } else {
+                        hi = mid;
+                    }
+                }
+                set(lo);
+            }
+            t.scrollTop = 0;
+            return;
+        }
+        const maxCols = t.clientWidth >= 800 ? 3 : t.clientWidth >= 560 ? 2 : 1;
+        const search = () => {
+            let best = null;
+            for (let c = 1; c <= maxCols; c++) {
+                t.style.columnCount = c === 1 ? 'auto' : c;
+                set(9);
+                if (!fits()) {
+                    continue;
+                }
+                let lo = 9;
+                let hi = 30;
+                while (hi - lo > 0.25) {
+                    const mid = (lo + hi) / 2;
+                    set(mid);
+                    if (fits()) {
+                        lo = mid;
+                    } else {
+                        hi = mid;
+                    }
+                }
+                if (!best || lo > best.size * 1.12) {
+                    best = { size: lo, cols: c };
+                }
+            }
+            return best;
+        };
+        if (pic) {
+            pic.style.maxHeight = '';
+        }
+        let best = search();
+        if (!best && pic) {
+            pic.style.maxHeight = '56px';
+            best = search();
+        }
+        if (!best) {
+            best = { size: 12, cols: 1 };
+        }
+        t.style.columnCount = best.cols === 1 ? 'auto' : best.cols;
+        set(best.size);
+        t.scrollTop = 0;
+    }
+
     function openPoem(poem) {
         byId('modalTitle').textContent = poem.guest ? poem.title : padNumber(poem.number);
         byId('modalEyebrow').textContent = poem.guest ? 'Community poem · by ' + poem.author : '';
@@ -161,6 +242,7 @@ function startIndexPage() {
             im.src = poem.image_url;
             im.alt = '';
             im.loading = 'lazy';
+            im.onload = fitPoem;
             media.append(im);
         }
         if (poem.music_url) {
@@ -169,6 +251,10 @@ function startIndexPage() {
             au.preload = 'none';
             au.src = poem.music_url;
             media.append(au);
+        }
+        fitPoem();
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(fitPoem);
         }
         byId('sheet').hidden = true;
         byId('cmCount').textContent = '0';
@@ -671,7 +757,14 @@ function startIndexPage() {
         byId('sheet').hidden = true;
     };
 
+    window.addEventListener('resize', fitPoem);
+
     modal.addEventListener('close', () => {
+        modal.classList.remove('tall');
+        const body = byId('modalText').parentElement;
+        body.style.fontSize = '';
+        body.style.lineHeight = '';
+        byId('modalText').style.columnCount = '';
         byId('media').querySelectorAll('audio').forEach((a) => a.pause());
         byId('sheet').hidden = true;
     });
