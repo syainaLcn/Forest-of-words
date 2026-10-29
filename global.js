@@ -1336,6 +1336,18 @@ function startAdminPage() {
     };
 
     suggest();
+
+    let canRemember = true;
+    try {
+        localStorage.setItem('fow_test', '1');
+        localStorage.removeItem('fow_test');
+    } catch (e) {
+        canRemember = false;
+    }
+    $('loginNote').textContent = canRemember
+        ? 'You will stay logged in on this device.'
+        : 'This browser cannot remember your login (private mode?).';
+
     restoreSession().then(show);
 }
 
