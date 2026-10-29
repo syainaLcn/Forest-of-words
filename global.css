@@ -1813,3 +1813,23 @@ body.site dialog#modal.tall {
 body.site dialog#modal.tall #modalText {
     flex: 0 1 auto;
 }
+
+/* Poem reader close button: plain X, no circle, turns brown on hover */
+body.site dialog#modal .close {
+    width: 44px;
+    height: 44px;
+    border-radius: 0;
+    background: transparent;
+    color: var(--night-text);
+    font-size: 30px;
+    line-height: 1;
+    outline: none;
+    box-shadow: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.site dialog#modal .close:hover,
+body.site dialog#modal .close:active {
+    background: transparent;
+    color: #b5803f;
+}
